@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>BIOBUZZ Sim</title>
+<style>
+:root{--bg:#f4f5f7;--fg:#14171c;--card:#fff;--ac:#e8590c;--mut:#6b7380;--bd:#d9dde3;--fld:#e9ecef;box-sizing:border-box}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1116;--fg:#e8ecf1;--card:#181d25;--mut:#8b95a3;--bd:#2a313c;--fld:#1d232c}}
+:root[data-theme="dark"]{--bg:#0e1116;--fg:#e8ecf1;--card:#181d25;--mut:#8b95a3;--bd:#2a313c;--fld:#1d232c}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;overflow:hidden;overscroll-behavior:none}
+body{background:var(--bg);color:var(--fg);font:14px system-ui,sans-serif}
+#app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+#top{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+#top .sp{flex:1}
+.ttl{font-size:15px;white-space:nowrap}
+button,select{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--fg);min-height:34px;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#run{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+#hud{font-weight:600;font-variant-numeric:tabular-nums;padding:0 6px;white-space:nowrap}
+.tilt{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--mut)}
+.tilt input{width:76px}
+.ovb{display:none}
+#main{display:grid;grid-template-columns:minmax(0,1fr) clamp(280px,34vw,460px);gap:8px;min-height:0}
+#vis{position:relative;min-height:0;border:1px solid var(--bd);border-radius:12px;overflow:hidden;background:var(--fld)}
+#vis canvas.gl,#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#cv{object-fit:contain}
+#v3{position:absolute;inset:0}
+#ovl{position:absolute;left:8px;bottom:8px;max-width:min(62%,560px);max-height:46%;display:flex;flex-direction:column;gap:4px;min-height:0}
+#st{font:600 12px system-ui;color:#fff;background:rgba(0,0,0,.6);border-radius:6px;padding:3px 8px}
+#st:empty{display:none}
+#tel{margin:0;font:12px/1.35 ui-monospace,Menlo,monospace;color:#e8ecf1;background:rgba(0,0,0,.6);border-radius:6px;padding:6px 8px;overflow:auto;white-space:pre-wrap;min-height:0}
+#side{display:grid;grid-template-rows:auto minmax(0,1fr);gap:8px;min-height:0}
+#pad{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px 8px;display:flex;flex-direction:column;align-items:center;gap:2px}
+#pad svg{width:100%;height:auto;max-height:44dvh;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.leg{font-size:11px;color:var(--mut);text-align:center;line-height:1.3}
+#codeSec{display:flex;flex-direction:column;min-height:0;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px;gap:6px}
+#codeSec .ch{display:none;justify-content:space-between;align-items:center}
+#src{flex:1;min-height:0;resize:none;width:100%;background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:8px;padding:8px;font:12.5px/1.4 ui-monospace,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}
+#help{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:30;padding:12px}
+#help[hidden]{display:none}
+#help .card{background:var(--card);color:var(--fg);border:1px solid var(--bd);border-radius:12px;padding:12px 14px;max-width:780px;max-height:88dvh;overflow:auto}
+#help .hh{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.hint{color:var(--mut);font-size:13px;line-height:1.55;margin:0}
+.hint code{color:var(--fg)}
+#vis{cursor:grab;touch-action:none}
+#vis.drag{cursor:grabbing}
+#cv{transform-origin:0 0}
+#zc{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px;z-index:2;cursor:default}
+#zc button{width:36px;height:36px;min-height:0;padding:0;font-size:18px;line-height:1;background:rgba(24,29,37,.82);color:#fff;border-color:rgba(255,255,255,.28)}
+#zc button.on{background:var(--ac);border-color:var(--ac)}
+#zl{font:600 11px system-ui;color:#fff;background:rgba(24,29,37,.82);border-radius:6px;padding:3px 0;text-align:center}
+#cp{position:absolute;top:8px;left:8px;width:min(320px,calc(100% - 64px));max-height:calc(100% - 16px);overflow:auto;background:rgba(18,22,29,.94);color:#e8ecf1;border:1px solid rgba(255,255,255,.18);border-radius:12px;padding:8px 10px;z-index:3;font-size:12px;cursor:default;display:grid;gap:5px}
+#cp[hidden]{display:none}
+#cp{box-sizing:border-box;grid-template-columns:minmax(0,1fr)}
+#cp>*{min-width:0}
+#cp label{display:grid;grid-template-columns:68px minmax(0,1fr) 98px;align-items:center;gap:6px}
+#cp input[type=range]{width:100%;min-width:0;margin:0}
+#cp select{width:100%}
+#cp .ph,#cp .pr{display:flex;justify-content:space-between;align-items:center;gap:8px}
+#cp select,#cp button{min-height:30px;padding:3px 8px;font-size:12px;background:#232a35;color:#e8ecf1;border-color:rgba(255,255,255,.22)}
+#cp b{font-weight:600;font-size:11px;text-align:right;white-space:nowrap}
+#cp label.ck{display:flex;gap:4px}
+#mn{color:#aab4c2;font-size:11px;line-height:1.4}
+/* controller */
+#padsvg{cursor:default}
+#padsvg .pout *{fill:#14171c;stroke:#14171c;stroke-width:10}
+#padsvg .pfil *{fill:#3a414d}
+#padsvg [data-b]{cursor:pointer}
+#padsvg .pbtn rect{fill:#5b6575;stroke:#14171c;stroke-width:2}
+#padsvg .pbtn text{fill:#e8ecf1;font:700 14px system-ui;text-anchor:middle;pointer-events:none}
+#padsvg .pbtn.on rect{fill:var(--ac)}
+#padsvg .face circle{stroke:#14171c;stroke-width:2;opacity:.8}
+#padsvg .face text{fill:#111;font:800 16px system-ui;text-anchor:middle;pointer-events:none}
+#padsvg .face.on circle{opacity:1;stroke:#fff;stroke-width:3}
+#padsvg .sbase{fill:#232830;stroke:#14171c;stroke-width:2}
+#padsvg .sknob{fill:#6b7585;stroke:#14171c;stroke-width:2}
+#padsvg .sdot{fill:#4a5260}
+#padsvg .hit{fill:transparent;pointer-events:all;cursor:grab}
+#padsvg .guide{fill:#e8ecf1}
+#padsvg .gx{stroke:#14171c;stroke-width:3;fill:none}
+#padsvg .dc{fill:#5b6575}
+/* portrait phones / tall narrow windows: visuals on top, controller below */
+@media (max-aspect-ratio:1/1){
+ #main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+ #side{grid-template-rows:auto}
+ #pad svg{max-height:33dvh}
+ .tilt span{display:none}
+ #pre{max-width:140px}
+}
+/* any screen too small to dock the editor: it becomes a pop-over */
+@media (max-aspect-ratio:1/1),(max-height:560px){
+ .ovb{display:inline-block}
+ .lb,.ttl,#top .sp{display:none}
+ .tilt input{width:60px}
+ #codeSec{display:none}
+ #codeSec.open{display:flex;position:fixed;left:8px;right:8px;bottom:8px;top:var(--hh,56px);z-index:20;box-shadow:0 10px 40px rgba(0,0,0,.45)}
+ #codeSec .ch{display:flex}
+ #side{grid-template-rows:auto}
+}
+@media (max-height:560px) and (min-aspect-ratio:1/1){#pad svg{max-height:calc(100dvh - 76px)}.leg{display:none}}
+</style></head><body>
+<div id="app">
+<header id="top">
+<b class="ttl">🐝 BIOBUZZ Sim</b>
+<select id="pre" aria-label="Program"><option value="0">REV TeleOp · 2:00</option><option value="1">REV Auto · 0:30</option><option value="2">REV + AprilTag aim</option></select>
+<button id="run" title="Run">▶<span class="lb"> Run</span></button><button id="stop" title="Stop">■<span class="lb"> Stop</span></button>
+<span id="hud">—</span><span class="sp"></span>
+<button id="vt">🧊 3D</button><button id="cb">🎯 Aim</button>
+<button id="cmb" title="Camera mount and angle">📷</button>
+<button id="cd" class="ovb" title="Code editor">&lt;/&gt;<span class="lb"> Code</span></button><button id="hp" aria-label="Help">?</button>
+</header>
+<main id="main">
+<section id="vis"><canvas id="cv" width="600" height="600" style="display:none"></canvas><div id="v3"></div>
+<div id="cp" hidden><div class="ph"><b>📷 C920 camera mount</b><button id="mx" title="Close">✕</button></div>
+<select id="mp" aria-label="Mount preset"></select>
+<label>Fwd / back<input id="mf" type="range" min="-9" max="9" step=".1"><b id="mfv"></b></label>
+<label>Left / right<input id="ml" type="range" min="-8" max="8" step=".1"><b id="mlv"></b></label>
+<label>Height<input id="mh" type="range" min="3.5" max="17.5" step=".1"><b id="mhv"></b></label>
+<label>Tilt<input id="ct" type="range" min="-10" max="70" step="1"><b id="ctv"></b></label>
+<label>Pan<input id="my" type="range" min="-60" max="60" step="1"><b id="myv"></b></label>
+<div class="pr"><button id="ma" title="Point the camera at the red hive tags from the launch spot">⌖ Auto-aim</button><label class="ck"><input type="checkbox" id="ms" checked> show FOV</label></div>
+<div id="mn"></div></div>
+<div id="zc"><button id="zi" title="Zoom in (+)">＋</button><button id="zo" title="Zoom out (−)">－</button><div id="zl">1.0×</div><button id="zr" title="Reset view (0 or double-click)">⟲</button><button id="zm" title="One-finger drag: pan or orbit">✥</button></div>
+<div id="ovl"><div id="st"></div><pre id="tel"></pre></div></section>
+<aside id="side"><div id="pad"></div>
+<section id="codeSec"><div class="ch"><b>Java OpMode</b><button id="cx">✕</button></div><textarea id="src" wrap="off" spellcheck="false" autocapitalize="off"></textarea></section></aside>
+</main>
+</div>
+<div id="help" hidden><div class="card"><div class="hh"><b>BIOBUZZ Sim · rules &amp; controls</b><button id="hx">✕</button></div><p class="hint"><b>You drive RED</b> (red alliance on the left, audience wall at the bottom). Field per the 2026-27 manual: 144 in, 36 tiles, centre HIVE frame (49.46 × 38.95 in, pivot 43.95 in), a FLOWER on each wall, gardens, loading zones, staging per §10.3.1.<br>
+<b>Robot: REV DUO FTC Starter Bot (2026-27).</b> Channel Drivetrain (4 × 408 mm C-channel rails, 20:1 HD Hex gearing, 90 mm traction / grip / omni wheels), Core Hex intake with six flap wheels (shaft 88 mm off the floor, 54-link #25 chain), polycarbonate chute, 2 × 90 mm grip-wheel flywheel on an HD Hex motor, Smart Robot Servo feeder (<code>crServo</code>) and a Smart Robot Servo <b>pollen poker</b> (<code>pollenServo</code>) on the side. The intake faces the wall at the start and the launcher fires out of the back.<br>
+<b>Hardware config (REV):</b> <code>leftDrive</code> <code>rightDrive</code> (reversed) <code>intakeMotor</code> <code>flywheel</code> <code>crServo</code> <code>pollenServo</code>. The two presets are REV's own OnBot Java TeleOp and Auto, unchanged (<code>targetVelocity = 1160</code>).<br>
+<b>Gamepad (REV layout):</b> left stick arcade drive · RB intake · RT outtake · LB flywheel sequence (spin, then feed once within ±20 ticks) · Y flywheel only · X flywheel reverse (−0.55) · D-pad ↑/↓ feeder · A poker down (position 0) · B poker up (position 1).<br>
+<b>Pollen poker (side-mounted servo, rod with an inward hook):</b> A lowers it (pollenServo 0), B raises it (1). It is not a hammer: nothing happens unless the hook touches the pollen. Lower it, put the hook in a flower's bottom opening and turn or drive so it sweeps across; it pushes the bottom POLLEN sideways out of its ring, toward the intake (run RB to catch it). Let go and the pollen rolls back. NECTAR (3.6 in) cannot pass the opening (G418).<br>
+<b>Rules enforced:</b> G418 (enter flowers only through the top; remove only POLLEN from the bottom), G410 (NECTAR into a flower before the last 60 s = MAJOR FOUL, +20 blue), G407 (max 4 controlled), R105.<br>
+<b>Score:</b> HIVE TIP +20, element in your cell +2, garden +1, flowers: elements above the middle ring count for the owner (+2 each, +5 bottom-nectar bonus), leave 3, park 5.<br>
+<b>Vision:</b> real 36h11 AprilTags (3.25 in), IDs 30–33 / 34–37 on the red cells and 38–41 / 42–45 on the blue. The C920 is an optional add-on (📷 panel). Program it with <code>VisionPortal</code> + <code>AprilTagProcessor</code> (preset “REV + AprilTag aim”).<br>
+<b>Keys:</b> W/A/S/D left stick · E = RB intake · R = RT outtake · Q = LB flywheel sequence · T = Y · Z = X · ↑/↓ = D-pad feeder · F = A poker down · G = B poker up. Xbox / USB gamepads are read automatically and shown live on the controller. 🧊 toggles 2D, 🎯 cycles cameras, “Code” opens the editor on small screens.<br>
+<b>Viewer:</b> mouse wheel / pinch = zoom, drag = pan, right-drag or Shift-drag = orbit (✥ switches one-finger drag between pan and orbit), double-click or ⟲ = reset, keys + − 0. Works in 3D and 2D.</p></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const P1=`package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
+
+@TeleOp
+public class REVStarterBotJava2026 extends LinearOpMode {
+
+  private DcMotor intakeMotor;
+  private DcMotor flywheel;
+  private CRServo crServo;
+  private DcMotor rightDrive;
+  private Servo pollenServo;
+  private DcMotor leftDrive;
+
+  int targetVelocity;
+  
+    /**
+   * The section below contains the iterative OpMode for the robot to operate so
+   * long as "Stop" has not been pressed OR communication to the Driver Station
+   * has not been lost.
+   */
+  @Override
+  public void runOpMode() {
+    intakeMotor = hardwareMap.get(DcMotor.class, "intakeMotor");
+    flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+    crServo = hardwareMap.get(CRServo.class, "crServo");
+    rightDrive = hardwareMap.get(DcMotor.class, "rightDrive");
+    pollenServo = hardwareMap.get(Servo.class, "pollenServo");
+    leftDrive = hardwareMap.get(DcMotor.class, "leftDrive");
+
+    // Setting up motors and variables
+    rightDrive.setDirection(DcMotor.Direction.REVERSE);
+    flywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    targetVelocity = 1160;
+    waitForStart();
+    if (opModeIsActive()) {
+      // Ensures the servo is up. Runs once after "Play" is pressed.
+      pollenServo.setPosition(1);
+      // Loop for the OpMode containing the functions
+      while (opModeIsActive()) {
+        intakeControls();
+        pollenPoker();
+        arcadeDrive();
+        flywheelControls();
+      // Allows for velocity to be seen on the Driver Station
+        telemetry.addData("Flywheel Velocity", ((DcMotorEx) flywheel).getVelocity());
+        telemetry.update();
+      }
+    }
+  }
+
+//Below are the individual functions, also called methods, for each system.
+
+  /**
+   * Intake Controls
+   * This function contains the controls for the intake system using the Core Hex.
+   */
+  private void intakeControls() {
+    // Intake in and out
+    if (gamepad1.right_bumper) {
+      intakeMotor.setPower(1);
+    } else if (gamepad1.right_trigger_pressed) {
+      intakeMotor.setPower(-1);
+    } else {
+      intakeMotor.setPower(0);
+    }
+  }
+  
+  /**
+   * Controls for the Pollen poking servo
+   * This function contains the code for the servo powered pollen poker on the front of the robot.
+   */
+  private void pollenPoker() {
+    // Servo control for poking out pollen
+    if (gamepad1.crossWasPressed()) {
+      pollenServo.setPosition(0);
+    } else if (gamepad1.circleWasPressed()) {
+      pollenServo.setPosition(1);
+    }
+  }
+
+  /**
+   * Controls for Arcade Drive
+   * This function contains the code for the arcade drive controls.
+   */
+  private void arcadeDrive() {
+    float x;
+    float y;
+
+    // Arcade Drive on left stick
+    x = gamepad1.left_stick_x;
+    y = -gamepad1.left_stick_y;
+    leftDrive.setPower(y + x);
+    rightDrive.setPower(y - x);
+  }
+  /**
+   * Controls for the flywheel - manual and auto sequence
+   * This function contains the controls for the flywheel system.
+   */
+  private void flywheelControls() {
+    if (gamepad1.triangle) {
+      // Manual control for flywheel motor
+      ((DcMotorEx) flywheel).setVelocity(targetVelocity);
+    } else if (gamepad1.square) {
+      // Reverse flywheel
+      flywheel.setPower(-0.55);
+    } else if (gamepad1.left_bumper) {
+      ((DcMotorEx) flywheel).setVelocity(targetVelocity);
+      // Auto feed into flywheel if within a set velocity range
+      if (((DcMotorEx) flywheel).getVelocity() >= targetVelocity - 20 && ((DcMotorEx) flywheel).getVelocity() <= targetVelocity + 20) {
+        crServo.setPower(1);
+      }
+    } else if (gamepad1.dpad_up) {
+      // Manual control for feeder servo
+      crServo.setPower(1);
+    } else if (gamepad1.dpad_down) {
+      // Reverse feeder
+      crServo.setPower(-1);
+    } else {
+      // Turn off servo and motor when gamepad is not active
+      flywheel.setPower(0);
+      crServo.setPower(0);
+    }
+  }
+}
+`;
+const P2=`package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+@Autonomous
+public class REVStarterBotJavaAuto2026 extends LinearOpMode {
+
+  private DcMotor rightDrive;
+  private DcMotor flywheel;
+  private Servo pollenServo;
+  private DcMotor leftDrive;
+  private CRServo crServo;
+  private DcMotor intakeMotor;
+
+  /**
+   * This autonomous code will have the robot drive away from the wall then 
+   * launch preloaded pollen. An optional delay is available if your team chooses 
+   * to start on the far side!
+   */
+  @Override
+  public void runOpMode() {
+    int targetVelocity;
+    ElapsedTime autoTimer;
+
+    rightDrive = hardwareMap.get(DcMotor.class, "rightDrive");
+    flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+    pollenServo = hardwareMap.get(Servo.class, "pollenServo");
+    leftDrive = hardwareMap.get(DcMotor.class, "leftDrive");
+    crServo = hardwareMap.get(CRServo.class, "crServo");
+    intakeMotor = hardwareMap.get(DcMotor.class, "intakeMotor");
+
+    // Put initialization blocks here.
+    rightDrive.setDirection(DcMotor.Direction.REVERSE);
+    flywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    targetVelocity = 1160;
+    autoTimer = new ElapsedTime();
+    waitForStart();
+    if (opModeIsActive()) {
+      // Ensures the servo for the pollen poker is in the right position pointing up
+      pollenServo.setPosition(1);
+      
+      // Enable the sleep call below (Line 51) to add a delay to the program starting
+      // The default delay is 10 seconds so be sure to adjust based on your strategy!
+      //sleep(10000);
+      
+      // Robot drives forward 700 milliseconds to no longer touch the wall
+      autoTimer.reset();
+      while (autoTimer.milliseconds() <= 700 && opModeIsActive()) {
+        leftDrive.setPower(-0.25);
+        rightDrive.setPower(-0.25);
+      }
+      
+      // Turn off drivetrain motors to prevent extra movement
+      leftDrive.setPower(0);
+      rightDrive.setPower(0);
+      
+      // Flywheel begins launch sequence for the preloaded pollen
+      autoTimer.reset();
+      
+      // The flywheel is set to spin for 15 seconds.
+      while (autoTimer.seconds() <= 15 && opModeIsActive()) {
+        ((DcMotorEx) flywheel).setVelocity(targetVelocity);
+       
+        // The flywheel must be within a specified range of the target velocity for the intake and feeder servo to activate!
+        if (((DcMotorEx) flywheel).getVelocity() >= targetVelocity - 50 && ((DcMotorEx) flywheel).getVelocity() <= targetVelocity + 50) {
+          crServo.setPower(1);
+          intakeMotor.setPower(1);
+        } else {
+        
+          // If the velocity is not within range, the intake and feeder servo turn off to prevent early feeding
+          crServo.setPower(0);
+          intakeMotor.setPower(0);
+        }
+      }
+    }
+  }
+}
+`;
+const P3=`package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Servo;
+
+// REV Starter Bot TeleOp + AprilTag aim assist.
+// Everything is REV's code; the only additions are the vision objects and the
+// "aim" block: hold LEFT BUMPER and the robot turns the rear launcher toward the
+// red hive tags and sets the flywheel speed from the tag range.
+@TeleOp(name="REV Starter Bot + AprilTag aim")
+public class REVStarterBotAprilTagAim extends LinearOpMode {
+
+  private DcMotor intakeMotor, flywheel, rightDrive, leftDrive;
+  private CRServo crServo;
+  private Servo pollenServo;
+  private AprilTagProcessor aprilTag;
+  private VisionPortal visionPortal;
+
+  int targetVelocity;
+  final double TURN_GAIN = 0.015;   // motor power per degree of bearing
+
+  @Override
+  public void runOpMode() {
+    intakeMotor = hardwareMap.get(DcMotor.class, "intakeMotor");
+    flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+    crServo = hardwareMap.get(CRServo.class, "crServo");
+    rightDrive = hardwareMap.get(DcMotor.class, "rightDrive");
+    pollenServo = hardwareMap.get(Servo.class, "pollenServo");
+    leftDrive = hardwareMap.get(DcMotor.class, "leftDrive");
+
+    rightDrive.setDirection(DcMotor.Direction.REVERSE);
+    flywheel.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+    targetVelocity = 1160;
+
+    aprilTag = new AprilTagProcessor.Builder()
+        .setDrawAxes(true)
+        .setDrawTagID(true)
+        .setDrawTagOutline(true)
+        .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
+        .setTagLibrary(AprilTagGameDatabase.getCurrentGameTagLibrary())
+        .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
+        .build();
+    visionPortal = new VisionPortal.Builder()
+        .setCamera(hardwareMap.get(WebcamName.class, "Webcam 1"))
+        .setCameraResolution(new Size(640, 480))
+        .addProcessor(aprilTag)
+        .build();
+
+    waitForStart();
+    if (opModeIsActive()) {
+      pollenServo.setPosition(1);
+      while (opModeIsActive()) {
+        // Tags on the RED audience-side cell (IDs 34-37): average them for a stable aim point
+        double bearingSum = 0;
+        double rangeSum = 0;
+        int count = 0;
+        AprilTagDetection target = null;
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        for (AprilTagDetection d : detections) {
+          if (d.metadata != null && d.id >= 34 && d.id <= 37) {
+            bearingSum += d.ftcPose.bearing;
+            rangeSum += d.ftcPose.range;
+            count++;
+            if (target == null || d.ftcPose.range < target.ftcPose.range) target = d;
+          }
+        }
+
+        // Arcade drive on the left stick (REV default)
+        double x = gamepad1.left_stick_x;
+        double y = -gamepad1.left_stick_y;
+        if (gamepad1.left_bumper && count > 0) {
+          x = -TURN_GAIN * (bearingSum / count);               // aim
+          targetVelocity = (int) (1850 - 12 * (rangeSum / count));   // range -> flywheel speed
+        }
+        leftDrive.setPower(y + x);
+        rightDrive.setPower(y - x);
+
+        // Intake: RB in, RT out (REV)
+        if (gamepad1.right_bumper) {
+          intakeMotor.setPower(1);
+        } else if (gamepad1.right_trigger_pressed) {
+          intakeMotor.setPower(-1);
+        } else {
+          intakeMotor.setPower(0);
+        }
+
+        // Pollen poker: A = down, B = up (REV)
+        if (gamepad1.crossWasPressed()) {
+          pollenServo.setPosition(0);
+        } else if (gamepad1.circleWasPressed()) {
+          pollenServo.setPosition(1);
+        }
+
+        // Flywheel (REV): Y manual, X reverse, LB auto-feed sequence, D-pad feeder
+        if (gamepad1.triangle) {
+          ((DcMotorEx) flywheel).setVelocity(targetVelocity);
+        } else if (gamepad1.square) {
+          flywheel.setPower(-0.55);
+        } else if (gamepad1.left_bumper) {
+          ((DcMotorEx) flywheel).setVelocity(targetVelocity);
+          if (((DcMotorEx) flywheel).getVelocity() >= targetVelocity - 20 && ((DcMotorEx) flywheel).getVelocity() <= targetVelocity + 20) {
+            crServo.setPower(1);
+          }
+        } else if (gamepad1.dpad_up) {
+          crServo.setPower(1);
+        } else if (gamepad1.dpad_down) {
+          crServo.setPower(-1);
+        } else {
+          flywheel.setPower(0);
+          crServo.setPower(0);
+        }
+
+        if (target != null) {
+          telemetry.addData("Tag", target.id);
+          telemetry.addLine(String.format("XYZ %6.1f %6.1f %6.1f (in)", target.ftcPose.x, target.ftcPose.y, target.ftcPose.z));
+          telemetry.addLine(String.format("PRY %6.1f %6.1f %6.1f (deg)", target.ftcPose.pitch, target.ftcPose.roll, target.ftcPose.yaw));
+          telemetry.addLine(String.format("RBE %6.1f %6.1f %6.1f (in, deg, deg)", target.ftcPose.range, target.ftcPose.bearing, target.ftcPose.elevation));
+        } else {
+          telemetry.addData("Tag", "none in view");
+        }
+        telemetry.addData("Tags seen / on red cell", detections.size() + " / " + count);
+        telemetry.addData("Flywheel Velocity", ((DcMotorEx) flywheel).getVelocity());
+        telemetry.update();
+      }
+    }
+  }
+}
+`;
+const $=id=>document.getElementById(id),src=$('src'),cv=$('cv'),X=cv.getContext('2d'),SC=600/144;
+src.value=P1;
+$('pre').onchange=e=>{src.value=[P1,P2,P3][+e.target.value];e.target.blur()};
+onclick=e=>{if(e.target&&e.target.tagName=='BUTTON')e.target.blur()};
+
+/* ---------- mini Java interpreter ---------- */
+const G={};
+function tk(s){const r=/\s+|\/\/.*|\/\*[\s\S]*?\*\/|("(?:\\.|[^"\\])*")|(\d+\.?\d*(?:[eE][-+]?\d+)?[fFdDL]?)|([A-Za-z_$][\w$]*)|(==|!=|<=|>=|&&|\|\||\+\+|--|\+=|-=|\*=|\/=|[-+*\/%<>=!?:;,.(){}\[\]@])/g;
+let t=[],m,l=0;
+while((m=r.exec(s))){if(m.index!==l)break;l=r.lastIndex;
+if(m[1]!==undefined)t.push({k:'s',v:JSON.parse(m[1])});else if(m[2])t.push({k:'n',v:parseFloat(m[2])});else if(m[3])t.push({k:'i',v:m[3]});else if(m[4])t.push({k:'p',v:m[4]})}
+if(l!==s.length)throw Error('Unexpected character: '+s[l]);return t}
+const OP=(o,a,b)=>o=='+'?a+b:o=='-'?a-b:o=='*'?a*b:o=='/'?a/b:o=='%'?a%b:o=='<'?a<b:o=='>'?a>b:o=='<='?a<=b:o=='>='?a>=b:o=='=='?a===b:a!==b;
+const LV=[['||'],['&&'],['==','!='],['<','>','<=','>='],['+','-'],['*','/','%']];
+function compile(src){
+const T=tk(src);let i=0;const M={},Fi=[];
+const pk=()=>T[i],nx=()=>{if(i>=T.length)throw Error('Unexpected end of file');return T[i++]},is=v=>T[i]&&T[i].k!=='s'&&T[i].v===v,eat=v=>is(v)?(i++,1):0,ex=v=>{if(!eat(v))throw Error("Expected '"+v+"' but found '"+(T[i]?T[i].v:'end of file')+"'")};
+const skipGen=()=>{if(is('<')){let d=0;do{if(is('<'))d++;else if(is('>'))d--;i++}while(d)}};
+const args=()=>{ex('(');const a=[];if(!eat(')')){do a.push(E());while(eat(','));ex(')')}return a};
+const E=()=>asg();
+function asg(){const l=tern(),o=pk();
+if(o&&o.k==='p'&&['=','+=','-=','*=','/='].includes(o.v)){i++;const r=asg();if(!l.set)throw Error('Cannot assign to expression');return c=>{let v=r(c);if(o.v!='=')v=OP(o.v[0],l(c),v);return l.set(c,v)}}return l}
+function tern(){const q=lv(0);if(eat('?')){const a=tern();ex(':');const b=tern();return c=>q(c)?a(c):b(c)}return q}
+function lv(n){if(n==6)return un();let l=lv(n+1);
+while(pk()&&pk().k==='p'&&LV[n].includes(pk().v)){const o=nx().v,r=lv(n+1),p=l;l=o=='||'?c=>p(c)||r(c):o=='&&'?c=>p(c)&&r(c):c=>OP(o,p(c),r(c))}return l}
+function un(){
+if(eat('!')){const e=un();return c=>!e(c)}
+if(eat('-')){const e=un();return c=>-e(c)}
+if(is('(')&&T[i+1]&&T[i+1].k==='i'&&T[i+2]&&T[i+2].v===')'&&T[i+3]&&(['i','n','s'].includes(T[i+3].k)||T[i+3].v==='(')){const ty=T[i+1].v;i+=3;const e=un();return ty=='int'||ty=='long'?c=>Math.trunc(e(c)):e}
+return post()}
+function post(){let e=prim();
+for(;;){if(eat('.')){const n=nx().v,o=e;
+if(is('(')){const a=args();e=c=>{const ob=o(c),f=ob==null?null:ob[n];if(typeof f!=='function')throw Error('Cannot call '+n+'() (null object?)');return f.apply(ob,a.map(g=>g(c)))}}
+else e=c=>{const ob=o(c);if(ob==null)throw Error('NullPointerException reading '+n);return ob[n]}}
+else if(is('++')||is('--')){const d=nx().v=='++'?1:-1,p=e;e=c=>{const v=p(c);p.set(c,v+d);return v}}else break}return e}
+function prim(){const t=nx();
+if(t.k==='n'||t.k==='s'){const v=t.v;return()=>v}
+if(t.v==='('){const e=E();ex(')');return e}
+if(t.k!=='i')throw Error("Unexpected '"+t.v+"'");
+const n=t.v;
+if(n=='true')return()=>true;if(n=='false')return()=>false;if(n=='null')return()=>null;
+if(n=='this')return c=>c.F;
+if(n=='new'){let cl=nx().v;while(eat('.'))cl+='.'+nx().v;skipGen();const a=args();return c=>G[cl]?G[cl](...a.map(g=>g(c))):{}}
+if(is('(')){const a=args(),f=c=>{const v=a.map(g=>g(c));if(M[n])return call(M[n],v,c.F);if(typeof G[n]=='function')return G[n](...v);throw Error('Cannot find method '+n)};f.callName=n;f.callArgs=a;return f}
+const f=c=>n in c.L?c.L[n]:n in c.F?c.F[n]:n in G?G[n]:(()=>{throw Error('Cannot find symbol: '+n)})();
+f.set=(c,v)=>{if(n in c.L)c.L[n]=v;else if(n in c.F)c.F[n]=v;else c.L[n]=v;return v};return f}
+function* callG(m,a,F){const L={};m.p.forEach((n,k)=>L[n]=a[k]);const r=yield* m.b({L,F});return r&&r.v}
+function call(m,a,F){const g=callG(m,a,F);let n=0,x=g.next();while(!x.done){if(++n>1e5)throw Error('Loop ran too long (infinite loop?)');x=g.next()}return x.value}
+const isG=v=>Object.prototype.toString.call(v)==='[object Generator]';
+function S(){
+if(eat('{')){const b=[];while(!eat('}'))b.push(S());return function*(c){for(const s of b){const r=yield* s(c);if(r)return r}}}
+if(eat(';'))return function*(){};
+const t=pk();
+if(!t)throw Error('Unexpected end of file');
+if(t.k==='i'){const v=t.v;
+if(v=='if'){i++;ex('(');const q=E();ex(')');const a=S(),b=eat('else')?S():null;return function*(c){if(q(c))return yield* a(c);if(b)return yield* b(c)}}
+if(v=='while'){i++;ex('(');const q=E();ex(')');const b=S();return function*(c){let n=0;while(q(c)){if(++n>1e5)throw Error('Loop ran too long (infinite loop?)');const r=yield* b(c);if(r){if(r.t=='b')break;if(r.t=='r')return r}yield}}}
+if(v=='for'){i++;ex('(');if(is('final'))i++;
+if(T[i]&&T[i].k==='i'&&T[i+1]&&T[i+1].k==='i'&&T[i+2]&&T[i+2].v===':'){const nm=T[i+1].v;i+=3;const it=E();ex(')');const b=S();return function*(c){let n=0;for(const x of it(c)){c.L[nm]=x;if(++n>1e5)throw Error('Loop ran too long (infinite loop?)');const r=yield* b(c);if(r){if(r.t=='b')break;if(r.t=='r')return r}}}}
+const a=S(),q=is(';')?null:E();ex(';');const u=is(')')?null:E();ex(')');const b=S();return function*(c){yield* a(c);let n=0;while(!q||q(c)){if(++n>1e5)throw Error('Loop ran too long (infinite loop?)');const r=yield* b(c);if(r){if(r.t=='b')break;if(r.t=='r')return r}u&&u(c)}}}
+if(v=='return'){i++;const e=is(';')?null:E();ex(';');return function*(c){return{t:'r',v:e&&e(c)}}}
+if(v=='break'){i+=2;return function*(){return{t:'b'}}}
+if(v=='continue'){i+=2;return function*(){return{t:'c'}}}
+if(v=='final'){i++;return S()}
+if(T[i+1]&&T[i+1].k==='p'&&T[i+1].v==='<'&&!['new','else','this','true','false','null','return'].includes(v)){let d=0,j=i+1;for(;j<T.length;j++){if(T[j].v==='<')d++;else if(T[j].v==='>'){d--;if(!d)break}}if(T[j+1]&&T[j+1].k==='i')i=j}
+if(!['new','else','this','true','false','null'].includes(v)&&T[i+1]&&T[i+1].k==='i'){i++;const ds=[];do{const n=nx().v,e=eat('=')?E():null;ds.push([n,e])}while(eat(','));ex(';');return function*(c){for(const[n,e]of ds)c.L[n]=e?e(c):0}}}
+const e=E();ex(';');
+if(e.callName){const n=e.callName,a=e.callArgs;return function*(c){if(M[n])yield* callG(M[n],a.map(g=>g(c)),c.F);else{const v=e(c);if(isG(v))yield* v}}}
+return function*(c){const v=e(c);if(isG(v))yield* v}}
+
+while(i<T.length&&T[i].v!=='class')i++;
+while(i<T.length&&!is('{'))i++;ex('{');
+while(!is('}')){
+if(eat('@')){nx();if(is('(')){let d=0;do{if(is('('))d++;if(is(')'))d--;i++}while(d)}continue}
+while(['public','private','protected','static','final'].includes(pk().v))i++;
+nx();skipGen();const n=nx().v;
+if(eat('(')){const p=[];while(!is(')')){if(is('final'))i++;nx();skipGen();p.push(nx().v);eat(',')}ex(')');M[n]={p,b:S()}}
+else{let nn=n;for(;;){const e=eat('=')?E():null;Fi.push([nn,e]);if(eat(','))nn=nx().v;else break}ex(';')}}
+return{M,Fi,call,callG,linear:!!M.runOpMode&&!M.loop}}
+
+/* ---------- FTC-style runtime ---------- */
+const clip=v=>Math.max(-1,Math.min(1,v));
+const PX=n=>new Proxy({},{get:(_,k)=>k==='toString'||k===Symbol.toPrimitive?()=>n:PX(n+'.'+k)});
+const mot={};
+function getM(n){const l=String(n).toLowerCase();if(/webcam|camera/.test(l))return{name:String(n)};const role=/pollen|poker|comb/.test(l)?'poker':/feed|crservo|^servo$/.test(l)?'feeder':/fly|launch|shoot/.test(l)?'flywheel':/intake|roller|flap/.test(l)?'intake':/left/.test(l)?'left':/right/.test(l)?'right':null;
+if(!role)throw Error('Hardware device not found: "'+n+'" (REV Starter Bot: leftDrive, rightDrive, intakeMotor, flywheel, crServo, pollenServo)');
+return mot[role]||(mot[role]={role,p:0,dir:1,enc:0,tgt:0,vel:0,pos:role=='poker'?1:0,tps:role=='intake'?600:2800,
+setPower(v){this.p=clip(v);this.tgt=this.p*this.dir*2800},getPower(){return this.p},
+setVelocity(v){this.tgt=v;this.p=clip(v/2800*this.dir)},getVelocity(){return this.vel},
+setDirection(d){this.dir=String(d).includes('REVERSE')?-1:1},setPosition(v){this.pos=Math.max(0,Math.min(1,v))},getPosition(){return this.pos},
+setMode(){},setZeroPowerBehavior(){},getCurrentPosition(){return Math.round(this.enc)}})}
+const JM={};Object.getOwnPropertyNames(Math).forEach(k=>JM[k]=Math[k]);
+Object.assign(JM,{toRadians:d=>d*Math.PI/180,toDegrees:r=>r*180/Math.PI,signum:Math.sign});
+let tbuf=[],tshow='',t0=0,simT=0;
+Object.assign(G,{Math:JM,Range:{clip:(v,a,b)=>Math.min(b,Math.max(a,v))},
+hardwareMap:{get:(_,n)=>getM(n),dcMotor:{get:n=>getM(n)}},
+telemetry:{addData(k,...a){let v=a.length>1&&typeof a[0]=='string'?a[0].replace(/%\.(\d)f/,(_,d)=>(+a[1]).toFixed(+d)):a[0];if(typeof v=='number'&&!Number.isInteger(v))v=v.toFixed(2);tbuf.push(k+' : '+v)},addLine(s){tbuf.push(s)},update(){tshow=tbuf.join('\n');tbuf=[]},clear(){tbuf=[]}},
+getRuntime:()=>simT,
+DcMotor:PX('DcMotor'),DcMotorEx:PX('DcMotorEx'),Servo:PX('Servo'),CRServo:PX('CRServo'),DcMotorSimple:PX('DcMotorSimple'),
+ElapsedTime:()=>{let s=simT;return{reset(){s=simT},seconds(){return simT-s},time(){return simT-s},milliseconds(){return(simT-s)*1000}}}});
+const BL=['a','b','x','y','left_bumper','right_bumper','dpad_up','dpad_down','dpad_left','dpad_right','start','back'],SK=['left_stick_x','left_stick_y','right_stick_x','right_stick_y','left_trigger','right_trigger'];
+const blank=()=>{const o={};BL.forEach(b=>o[b]=false);SK.forEach(s=>o[s]=0);return o};
+const gp1=blank(),gp2=blank();G.gamepad1=gp1;G.gamepad2=gp2;
+const PADN={a:['a','cross'],b:['b','circle'],x:['x','square'],y:['y','triangle']};
+function padInit(g){g.__s={};BL.forEach(k=>{(PADN[k]||[k]).forEach(al=>{const cc=al.replace(/_(\w)/g,(m,x)=>x.toUpperCase());
+g[cc+'WasPressed']=()=>{const cur=!!g[k],p=g.__s[cc+'p'];g.__s[cc+'p']=cur;return cur&&!p};
+g[cc+'WasReleased']=()=>{const cur=!!g[k],p=g.__s[cc+'r'];g.__s[cc+'r']=cur;return !cur&&!!p}})})}
+function padDerive(g){g.cross=g.a;g.circle=g.b;g.square=g.x;g.triangle=g.y;g.left_trigger_pressed=g.left_trigger>.5;g.right_trigger_pressed=g.right_trigger>.5;g.left_stick_button=false;g.right_stick_button=false;g.options=g.start;g.share=g.back;g.ps=false}
+padInit(gp1);padInit(gp2);padDerive(gp1);padDerive(gp2);
+const ks=new Set,tp={},vg={lx:0,ly:0,rx:0,ry:0,lt:0,rt:0,lb:0,rb:0,a:0,b:0,x:0,y:0,du:0,dd:0,dl:0,dr:0,st:0,bk:0};
+onkeydown=e=>{if(e.code=='Escape'){$('help').hidden=true;$('cp').hidden=true;$('codeSec').classList.remove('open')}if(e.target.tagName!='TEXTAREA'){if(e.key=='+'||e.key=='=')zoomC(1.25);else if(e.key=='-'||e.key=='_')zoomC(.8);else if(e.key=='0')viewReset();ks.add(e.code);if(e.code.startsWith('Arrow')||e.code=='Space')e.preventDefault()}};
+onkeyup=e=>{ks.delete(e.code);if(e.target.tagName!='TEXTAREA'&&(e.code=='Space'||e.code=='Enter'))e.preventDefault()};
+
+const kk=c=>ks.has(c)?1:0;
+function readPad(){
+const o=blank();
+o.left_stick_x=kk('KeyD')-kk('KeyA');o.left_stick_y=kk('KeyS')-kk('KeyW');
+if(kk('KeyR'))o.right_trigger=1;if(kk('Space'))o.left_trigger=1;
+if(kk('KeyQ'))o.left_bumper=true;if(kk('KeyE'))o.right_bumper=true;
+if(kk('KeyF'))o.a=true;if(kk('KeyG'))o.b=true;if(kk('KeyZ'))o.x=true;if(kk('KeyT'))o.y=true;
+if(kk('ArrowUp'))o.dpad_up=true;if(kk('ArrowDown'))o.dpad_down=true;if(kk('ArrowLeft'))o.dpad_left=true;if(kk('ArrowRight'))o.dpad_right=true;
+if(vg.rt)o.right_trigger=1;if(vg.lt)o.left_trigger=1;if(vg.lb)o.left_bumper=true;if(vg.rb)o.right_bumper=true;
+if(vg.a)o.a=true;if(vg.b)o.b=true;if(vg.x)o.x=true;if(vg.y)o.y=true;if(vg.du)o.dpad_up=true;if(vg.dd)o.dpad_down=true;if(vg.dl)o.dpad_left=true;if(vg.dr)o.dpad_right=true;if(vg.st)o.start=true;if(vg.bk)o.back=true;
+if(vg.lx||vg.ly){o.left_stick_x=vg.lx;o.left_stick_y=vg.ly}if(vg.rx||vg.ry){o.right_stick_x=vg.rx;o.right_stick_y=vg.ry}
+for(const t of Object.values(tp)){if(t.l){o.left_stick_x=t.dx;o.left_stick_y=t.dy}else{o.right_stick_x=t.dx;o.right_stick_y=t.dy}}
+const p=navigator.getGamepads?[...navigator.getGamepads()].find(Boolean):null;
+if(p){const d=v=>Math.abs(v)>.08?v:0;
+['left_stick_x','left_stick_y','right_stick_x','right_stick_y'].forEach((n,k)=>{const v=d(p.axes[k]||0);if(v)o[n]=v});
+const nm=['a','b','x','y','left_bumper','right_bumper','left_trigger','right_trigger','back','start',,,'dpad_up','dpad_down','dpad_left','dpad_right'];
+nm.forEach((n,k)=>{const b=p.buttons[k];if(!b)return;if(n.includes('trigger')){if(b.value>o[n])o[n]=b.value}else if(b.pressed)o[n]=true})}
+return o}
+
+/* ---------- BIOBUZZ field + REV DUO Starter Bot ---------- */
+const FLP=[[72,6.5],[137.5,72],[72,137.5],[6.5,72]],HX=[59.25,84.75],TH=200,MS=[26,42,42],hold={i:0,o:0,s:0,f:0,p:0,d:0},vis={on:false,w:640,h:480};
+let lin=null,linDone=false,R,balls,hv,fls,carry,eT,lT,pT,nStock,nAll,arm,fo,note={m:'',t:-1e9},tleft=0,run=false,dur=120,prog=null,F=null,last=0,mode=0;
+const cl=(v,a,b)=>Math.max(a,Math.min(b,v)),rnd=(a,b)=>a+Math.random()*(b-a),isOpen=()=>run&&mode==0&&tleft<=60,nectarOK=isOpen,notify=m=>{note.m=m;note.t=performance.now()};
+const DIA=[2.8,3.6,3.6],MID=3.95,fh=f=>f.reduce((a,t)=>a+DIA[t],0),PKP=[3.5,6.0],PKL=9,PKX=5.6,PKR=7.9,KL=205/1160;
+function reset(){
+R={x:59.25,y:135.4,h:Math.PI,vl:0,vr:0,w:0,v:0};balls=[];
+const ad=(x,y,t)=>balls.push({x,y,z:t?1.8:1.4,vx:0,vy:0,vz:0,r:t?1.8:1.4,t});
+for(let k=0;k<4;k++){ad(1.4+2.8*k,1.4,0);ad(142.6-2.8*k,142.6,0);ad(1.4,101+3*k,0)}
+for(let k=0;k<8;k++)ad(142.6,26+2.8*k,0);
+hv=[{up:1,cell:[1,1,1],tips:0,rot:.49},{up:-1,cell:[2,2,2],tips:0,rot:-.49}];
+fls=FLP.map(()=>[0,0,0,0]);carry=[0,0,0,0];eT=lT=pT=0;nStock=5;nAll=0;arm={ap:1,pv:null};fo=FLP.map(()=>({x:0,y:0}));note.t=-1e9;note.f=0;
+Object.keys(mot).forEach(k=>delete mot[k]);vis.on=false;tbuf=[];tshow=''}
+reset();
+function* idleG(){yield}
+function* sleepG(ms){const t=simT+ms/1000;while(simT<t&&run)yield}
+Object.assign(G,{opModeIsActive:()=>run,isStopRequested:()=>!run,opModeInInit:()=>false,sleep:ms=>sleepG(ms),waitForStart:()=>idleG(),idle:()=>idleG(),LinearOpMode:PX('LinearOpMode'),TeleOp:PX('TeleOp'),Autonomous:PX('Autonomous')});
+/* ---------- flower scoring (manual 10.5.2) + the arm ---------- */
+function fScore(f){let b=0;const sc=[];f.forEach(t=>{b+=DIA[t];if(b>MID)sc.push(t)});
+if(!sc.length)return[0,0];let top=0,bot=0;
+for(let i=sc.length-1;i>=0;i--)if(sc[i]){top=sc[i];break}for(let i=0;i<sc.length;i++)if(sc[i]){bot=sc[i];break}
+let r=0,u=0;if(top==1)r+=2*sc.length;else if(top==2)u+=2*sc.length;if(bot==1)r+=5;else if(bot==2)u+=5;return[r,u]}
+/* REV pollen poker: Smart Robot Servo on the side of the robot. pollenServo 0 = DOWN (reaches the flower's bottom opening), 1 = UP (stowed) */
+const pokeAng=a=>(-25+115*a)*Math.PI/180;
+function pokerTip(){const th=pokeAng(arm.ap),f=PKP[0]+PKL*Math.cos(th),h=PKP[1]+PKL*Math.sin(th),s=Math.sin(R.h),c=Math.cos(R.h);return{x:R.x+s*f+c*PKX,y:R.y-c*f+s*PKX,h,f}}
+/* The poker is a rigid rod with a hook that bends inward at the tip. The servo only chooses UP (1) or DOWN (0); nothing happens unless the hook TOUCHES pollen.
+   The bottom pollen sits in the flower's lower ring with the wall-side extrusion behind it and the opening free on the other sides, so the hook can only push it
+   SIDEWAYS out of the ring. Turn or drive so the hook sweeps across the opening and the pollen is combed out toward the intake. If the hook stops, the pollen rolls back. */
+function pokerStep(prev,dt){const tp=pokerTip(),pv=arm.pv;arm.pv=[tp.x,tp.y];
+const vx=pv?(tp.x-pv[0])/Math.max(dt,1e-3):0,vy=pv?(tp.y-pv[1])/Math.max(dt,1e-3):0,TR=.5;
+FLP.forEach(([x,y],j)=>{const f=fls[j],o=fo[j];if(!f.length){o.x=o.y=0;return}
+const k=Math.hypot(72-x,72-y),nx=(72-x)/k,ny=(72-y)/k;let hit=false;
+if(tp.h>.4&&tp.h<3.9){
+if(f[0]!==0){if(Math.hypot(tp.x-x,tp.y-y)<3.2)notify('G418: NECTAR (3.6 in) cannot pass the 3.55 in retrieval opening');return}
+const dx=x+o.x-tp.x,dy=y+o.y-tp.y,d=Math.hypot(dx,dy),m=1.4+TR;
+if(d<m&&d>.25){const pen=m-d;o.x+=dx/d*pen;o.y+=dy/d*pen;o.px=dx/d;o.py=dy/d;hit=true}
+const al=o.x*nx+o.y*ny;if(al<-.4){o.x+=(-.4-al)*nx;o.y+=(-.4-al)*ny}
+const r=Math.hypot(o.x,o.y);
+if(r>2&&hit){const sp=Math.max(14,Math.hypot(vx,vy)*.8);f.shift();balls.push({x:x+o.x,y:y+o.y,z:1.4,vx:o.px*sp,vy:o.py*sp,vz:0,r:1.4,t:0});o.x=o.y=0;return}}
+if(!hit){const q=Math.exp(-8*dt);o.x*=q;o.y*=q}})}
+function calc(){let r=0,b=0;
+r+=hv[0].tips*20;b+=hv[1].tips*20;r+=hv[0].cell.length*2;b+=hv[1].cell.length*2;
+balls.forEach(q=>{if(q.z<q.r+.5&&Math.hypot(q.vx,q.vy)<6){if(q.x<23+q.r&&q.y<2+q.r)r++;if(q.x>121-q.r&&q.y>142-q.r)b++}});
+fls.forEach(f=>{const q=fScore(f);r+=q[0];b+=q[1]});b+=20*(note.f||0);
+if(mode==1&&Math.min(R.x,R.y,144-R.x,144-R.y)>9.2)r+=3;
+if(Math.hypot(R.x-cl(R.x,0,11),R.y-cl(R.y,96.5,119.5))<8)r+=5;
+return[r,b]}
+const stopMotors=()=>Object.values(mot).forEach(m=>{m.p=0;m.tgt=0});
+function fail(e){run=false;lin=null;vis.on=false;stopMotors();tshow='⚠ '+(e.message||e)}
+$('run').onclick=()=>{try{
+reset();mode=+$('pre').value;if(mode==2)mode=0;dur=mode==1?30:120;tleft=dur;simT=0;lin=null;linDone=false;
+prog=compile(src.value);F={};const c={L:{},F};prog.Fi.forEach(([n,e])=>F[n]=e?e(c):0);
+if(!prog.M.init&&!prog.M.loop&&!prog.M.runOpMode)throw Error('No init()/loop() or runOpMode() found. Extend OpMode or LinearOpMode.');
+t0=performance.now();
+if(prog.linear)lin=prog.callG(prog.M.runOpMode,[],F);else if(prog.M.init)prog.call(prog.M.init,[],F);
+tshow='Running…';run=true}catch(e){fail(e)}};
+$('stop').onclick=()=>{if(run)finish()};
+function finish(){run=false;lin=null;vis.on=false;try{if(prog&&prog.M.stop)prog.call(prog.M.stop,[],F)}catch(e){}stopMotors();tbuf=[];const[r,b]=calc();tshow+=(tshow?'\n':'')+'■ Final · Red '+r+' · Blue '+b}
+function pr(x,y,r){const a=24.73,b=19.48,qx=cl(x,72-a,72+a),qy=cl(y,72-b,72+b),dx=x-qx,dy=y-qy,d=Math.hypot(dx,dy);
+if(d>=r)return[x,y];if(d<.01)return[x,72+(y<72?-1:1)*(b+r)];return[qx+dx/d*r,qy+dy/d*r]}
+function nect(){if(nStock>0){nStock--;balls.push({x:7,y:rnd(100,116),z:1.8,vx:12,vy:0,vz:0,r:1.8,t:1})}}
+function tip(i){const H=hv[i];H.tips++;
+H.cell.forEach(t=>balls.push({x:HX[i]+rnd(-6,6),y:72+H.up*rnd(24,30),z:12+rnd(0,5),vx:rnd(-12,12),vy:H.up*rnd(8,24),vz:0,r:t?1.8:1.4,t}));
+H.cell=[];H.up=-H.up;if(i==0)nect()}
+function physics(dt){
+const L=mot.left,Rm=mot.right,I=mot.intake,Fw=mot.flywheel,Fd=mot.feeder,Pk=mot.poker,mv=q=>q?q.p*q.dir:0;
+const tl=mv(L)*47,tr=-mv(Rm)*47,k=Math.min(1,dt*7);
+R.vl+=(tl-R.vl)*k;R.vr+=(tr-R.vr)*k;R.v=(R.vl+R.vr)/2;R.w=(R.vl-R.vr)/12*.75;R.h+=R.w*dt;
+const s=Math.sin(R.h),c=Math.cos(R.h),fx=s,fy=-c;
+const ox=R.x,oy=R.y;R.x=cl(R.x+fx*R.v*dt,8.5,135.5);R.y=cl(R.y+fy*R.v*dt,8.5,135.5);
+const pp0=pr(R.x,R.y,9);R.x=pp0[0];R.y=pp0[1];
+FLP.forEach(([x,y])=>{const dx=R.x-x,dy=R.y-y,d=Math.hypot(dx,dy);if(d<13&&d>.01){R.x=x+dx/d*13;R.y=y+dy/d*13}});R.blk=Math.abs(R.v)>6&&Math.hypot(R.x-ox,R.y-oy)<.25*Math.abs(R.v)*dt;
+Object.values(mot).forEach(m=>{m.enc+=m.p*m.dir*m.tps*dt;m.vel+=(m.tgt-m.vel)*Math.min(1,dt*(m.role=='flywheel'?4:2.8))});
+const ip=mv(I);eT-=dt;lT-=dt;pT-=dt;const prevAp=arm.ap;arm.ap+=cl((Pk?Pk.pos:1)-arm.ap,-3.5*dt,3.5*dt);hv.forEach(H=>H.rot+=(H.up*.49-H.rot)*Math.min(1,dt*8));
+if(run){
+if(mode==0&&tleft<=60&&!nAll){nAll=1;while(nStock>0)nect()}
+if(ip>.3&&carry.length<4)balls.forEach(b=>{const ex=b.x-R.x,ey=b.y-R.y,f=ex*fx+ey*fy,l=ex*c+ey*s;
+if(!b.dead&&b.t<2&&b.z<6&&carry.length<4&&f>5&&f<13+b.r&&Math.abs(l)<5+b.r){carry.push(b.t);b.dead=1}});
+if(ip<-.3&&carry.length&&eT<=0){const t=carry.pop();balls.push({x:R.x+fx*11,y:R.y+fy*11,z:t?1.8:1.4,vx:fx*45,vy:fy*45,vz:0,r:t?1.8:1.4,t});eT=.3}
+if(Fw&&mv(Fd)>.3&&carry.length&&lT<=0&&Fw.vel>250){
+const t=carry.pop(),v=KL*Fw.vel,vh=v*Math.cos(1.2217),vz=v*Math.sin(1.2217);
+balls.push({x:R.x-fx*9,y:R.y-fy*9,z:11,vx:-fx*vh+fx*R.v,vy:-fy*vh+fy*R.v,vz,r:t?1.8:1.4,t});Fw.vel*=.93;lT=.3}
+pokerStep(prevAp,dt)}
+balls.forEach(b=>{if(b.dead)return;
+const pz=b.z,py=b.y,air=b.z>b.r+.05||b.vz>0;
+if(air)b.vz-=386*dt;else{const q=Math.exp(-1.8*dt);b.vx*=q;b.vy*=q}
+b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;
+if(b.z<=b.r){b.z=b.r;b.vz=b.vz<-40?-b.vz*.35:0}
+if(b.z<8){const ex=b.x-R.x,ey=b.y-R.y,e=Math.hypot(ex,ey),mn=9+b.r;
+if(e<mn&&e>.01){b.x=R.x+ex/e*mn;b.y=R.y+ey/e*mn;b.vx+=ex/e*20;b.vy+=ey/e*20}
+const q=pr(b.x,b.y,b.r);b.x=q[0];b.y=q[1];FLP.forEach(([x,y])=>{const dx=b.x-x,dy=b.y-y,d=Math.hypot(dx,dy),mn=3.4+b.r;if(d<mn&&d>.01){b.x=x+dx/d*mn;b.y=y+dy/d*mn}})}
+if(b.x<b.r||b.x>144-b.r){b.x=cl(b.x,b.r,144-b.r);b.vx*=-.5}
+if(b.y<b.r||b.y>144-b.r){b.y=cl(b.y,b.r,144-b.r);b.vy*=-.5}
+hv.forEach((H,i)=>{const u=H.up,pp=72+u*16.5;
+if(!b.dead&&(py-pp)*(b.y-pp)<=0&&b.vy*u<0&&Math.abs(b.x-HX[i])<=11&&b.z>44&&b.z<72){
+if(Math.abs(b.x-HX[i])<=10&&b.z>=52.5&&b.z<=64.5){b.dead=1;H.cell.push(b.t);if(H.cell.reduce((a,t)=>a+MS[t],0)>=TH)tip(i)}
+else{b.vy*=-.3;b.y=pp+u}}});
+if(run&&!b.dead&&b.vz<0&&pz>21.5&&b.z<=21.5)FLP.forEach(([x,y],j)=>{if(!b.dead&&Math.hypot(b.x-x,b.y-y)<3&&fh(fls[j])+DIA[b.t]<=22){fls[j].push(b.t);b.dead=1;if(b.t&&!nectarOK()){note.f=(note.f||0)+1;notify('MAJOR FOUL G410: NECTAR into a flower before the last 60 s (+20 blue)')}}})});
+balls=balls.filter(b=>!b.dead)}
+
+/* ---------- AprilTag vision: real 36h11 tags + Logitech C920 pinhole model ---------- */
+const TAGS={"30": "003640623a284e00", "31": "002c782a4e5c6800", "32": "000e4c18045e0400", "33": "0044583e20225400", "34": "00524a7e44184c00", "35": "002a000656302c00", "36": "007a74024c406c00", "37": "00163a045e6e6c00", "38": "001c72646c046200", "39": "00562c5038567200", "40": "004876305c7c6a00", "41": "005c64081a487a00", "42": "006e5c2a204a1600", "43": "00501868283c3600", "44": "0014441c56584e00", "45": "00266c3e685a3e00"};
+const CAL={'640x480':[622.001,622.001,319.803,241.251],'800x600':[775.79,775.79,400.898,300.79],'640x360':[463.566,463.566,316.402,176.412],'800x448':[578.272,578.272,402.145,221.506],'864x480':[626.909,626.909,426.007,236.834],'1920x1080':[1385.92,1385.92,951.982,534.084]};
+const TGC=[[0,-1,30],[0,1,34],[1,1,38],[1,-1,42]],TNAME=['Red far','Red audience','Blue audience','Blue far'];
+const dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],deg=r=>r*180/Math.PI;
+/* C920 mount, robot frame: fwd (+ toward the intake, - behind centre), lat (+ robot's right), height, tilt (up +), pan (clockwise from above +) */
+const CMT={fwd:-7.4,lat:0,h:12.5,pitch:35,yaw:0,show:true};
+const MOUNTS={'Rear mast · centre':{fwd:-7.4,lat:0,h:12.5},'Rear post · left':{fwd:-7.4,lat:-6.0,h:14},'Rear post · right':{fwd:-7.4,lat:6.0,h:14},'Low rear bumper':{fwd:-7.4,lat:0,h:6.5}};
+const NOM={x:59.25,y:128,h:Math.PI};
+const camPitch=()=>CMT.pitch*Math.PI/180;
+function camPose(r){r=r||R;const th=CMT.pitch*Math.PI/180,ya=CMT.yaw*Math.PI/180,fx=Math.sin(r.h),fz=-Math.cos(r.h),c=Math.cos(r.h),s=Math.sin(r.h),bx=-fx,bz=-fz,dx=bx*Math.cos(ya)-bz*Math.sin(ya),dz=bx*Math.sin(ya)+bz*Math.cos(ya),ct=Math.cos(th);
+const F=[dx*ct,Math.sin(th),dz*ct],hh=Math.hypot(F[0],F[2]),Rt=[-F[2]/hh,0,F[0]/hh],
+Uc=[Rt[1]*F[2]-Rt[2]*F[1],Rt[2]*F[0]-Rt[0]*F[2],Rt[0]*F[1]-Rt[1]*F[0]];
+return{P:[r.x+fx*CMT.fwd+c*CMT.lat,CMT.h,r.y+fz*CMT.fwd+s*CMT.lat],F,Rt,Uc}}
+const aimTarget=()=>{const ph=.49,sp=Math.sin(ph),cp=Math.cos(ph);return[HX[0],43.95-1.8*cp+15.4*sp,72+1.8*sp+15.4*cp]};   /* centre of the red audience-cell tag row */
+function autoAim(){const P=camPose(NOM).P,T=aimTarget(),v=[T[0]-P[0],T[1]-P[1],T[2]-P[2]],fx=Math.sin(NOM.h),fz=-Math.cos(NOM.h);
+let a=Math.atan2(v[2],v[0])-Math.atan2(-fz,-fx);a=Math.atan2(Math.sin(a),Math.cos(a));
+CMT.yaw=Math.round(cl(a*180/Math.PI,-60,60)*10)/10;CMT.pitch=Math.round(cl(Math.atan2(v[1],Math.hypot(v[0],v[2]))*180/Math.PI,-10,70)*10)/10}
+function aimErr(){const cp=camPose(NOM),T=aimTarget(),v=[0,1,2].map(i=>T[i]-cp.P[i]),xc=dot(v,cp.Rt),yc=dot(v,cp.F),zc=dot(v,cp.Uc);return{b:deg(Math.atan2(-xc,yc)),e:deg(Math.atan2(zc,yc)),r:Math.hypot(...v)}}
+function fovPoints(cp,L){const[fx,fy,cx,cy]=CAL[vis.w+'x'+vis.h]||CAL['640x480'];
+const cor=[[0,0],[vis.w,0],[vis.w,vis.h],[0,vis.h]].map(([u,v])=>{const xc=(u-cx)/fx,zc=-(v-cy)/fy;return[0,1,2].map(i=>cp.P[i]+(cp.F[i]+cp.Rt[i]*xc+cp.Uc[i]*zc)*L)});
+const sg=[];cor.forEach(c=>sg.push(cp.P,c));[[0,1],[1,2],[2,3],[3,0]].forEach(([a,b])=>sg.push(cor[a],cor[b]));sg.push(cp.P,[0,1,2].map(i=>cp.P[i]+cp.F[i]*L));return sg}
+function tagList(){const o=[];TGC.forEach(([i,s,id0],ci)=>{const ph=hv[i].rot,sp=Math.sin(ph),cp=Math.cos(ph);
+for(let k=0;k<4;k++)o.push({id:id0+k,ci,C:[HX[i]+s*(k-1.5)*4.6,43.95-1.8*cp+15.4*s*sp,72+1.8*sp+15.4*s*cp],n:[0,-cp,sp],u:[0,s*sp,s*cp],r:[s,0,0]})});return o}
+function detectTags(){if(!vis.on)return[];
+const[fx,fy,cx,cy]=CAL[vis.w+'x'+vis.h]||CAL['640x480'],cp=camPose(),out=[];
+tagList().forEach(t=>{
+const v=sub(t.C,cp.P),xc=dot(v,cp.Rt),yc=dot(v,cp.F),zc=dot(v,cp.Uc);
+if(yc<2)return;
+const rng=Math.sqrt(dot(v,v));if(dot(t.n,v)>=0||-dot(t.n,v)/rng<.17)return;
+const cs=[[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b])=>{const W=[0,1,2].map(q=>t.C[q]+1.625*(a*t.r[q]+b*t.u[q])),w=sub(W,cp.P),yy=dot(w,cp.F);return{x:cx+fx*dot(w,cp.Rt)/yy,y:cy-fy*dot(w,cp.Uc)/yy,yy}});
+if(cs.some(c=>c.yy<2||c.x<2||c.x>vis.w-2||c.y<2||c.y>vis.h-2))return;
+const side=(Math.hypot(cs[1].x-cs[0].x,cs[1].y-cs[0].y)+Math.hypot(cs[2].x-cs[3].x,cs[2].y-cs[3].y))/2;if(side<14)return;
+const ax=[t.r,t.n.map(q=>-q),t.u].map(a=>[dot(a,cp.Rt),dot(a,cp.F),dot(a,cp.Uc)]),M=(i,j)=>ax[j][i];
+out.push({id:t.id,hamming:0,decisionMargin:Math.min(150,side*1.5),center:{x:cx+fx*xc/yc,y:cy-fy*zc/yc},corners:cs.map(c=>({x:c.x,y:c.y})),
+ftcPose:{x:xc,y:yc,z:zc,pitch:deg(Math.asin(cl(M(2,1),-1,1))),roll:deg(Math.atan2(-M(2,0),M(2,2))),yaw:deg(Math.atan2(-M(0,1),M(1,1))),range:rng,bearing:deg(Math.atan2(-xc,yc)),elevation:deg(Math.atan2(zc,yc))},
+metadata:{id:t.id,name:TNAME[t.ci]+' hive cell #'+(t.id-TGC[t.ci][2]+1),tagsize:3.25},_n:ax[1].map(q=>-q)})});
+return out.sort((a,b)=>a.id-b.id)}
+const mkList=a=>{a.size=()=>a.length;a.get=i=>a[i];a.isEmpty=()=>!a.length;a.add=x=>{a.push(x);return true};return a};
+const jfmt=(f,a)=>{let k=0;return String(f).replace(/%(-?)(\d*)(?:\.(\d+))?([dfsxn%])/g,(m,l,w,p,t)=>{if(t=='n')return'\n';if(t=='%')return'%';const v=a[k++];let s=t=='d'?String(Math.trunc(v)):t=='f'?(+v).toFixed(p===undefined?6:+p):t=='x'?Math.trunc(v).toString(16):String(v);if(w)s=l?s.padEnd(+w):s.padStart(+w);return s})};
+const chain=(o,ns)=>{ns.forEach(n=>o[n]=(...a)=>{o['_'+n]=a;return o});return o};
+Object.assign(G,{String:{format:(f,...a)=>jfmt(f,a),valueOf:v=>String(v)},ArrayList:()=>mkList([]),Size:(w,h)=>({width:w,height:h,getWidth:()=>w,getHeight:()=>h}),
+WebcamName:PX('WebcamName'),VisionPortal:PX('VisionPortal'),AprilTagProcessor:PX('AprilTagProcessor'),DistanceUnit:PX('DistanceUnit'),AngleUnit:PX('AngleUnit'),
+AprilTagGameDatabase:{getCurrentGameTagLibrary:()=>({})},
+'AprilTagProcessor.Builder':()=>{const o=chain({},['setDrawAxes','setDrawCubeProjection','setDrawTagOutline','setDrawTagID','setTagFamily','setTagLibrary','setOutputUnits','setCameraPose','setNumThreads','setLensIntrinsics','setSuppressCalibrationWarnings']);
+o.build=()=>({enabled:true,getDetections:()=>mkList(detectTags()),getFreshDetections:()=>mkList(detectTags()),setDecimation(){}});return o},
+'VisionPortal.Builder':()=>{const o=chain({},['setCamera','setStreamFormat','enableLiveView','setAutoStopLiveView','setLiveViewContainerId','setCameraResolution','addProcessor','addProcessors']);
+o.build=()=>{const z=o._setCameraResolution&&o._setCameraResolution[0];vis.w=z?z.width:640;vis.h=z?z.height:480;vis.on=true;
+return{close(){vis.on=false},stopStreaming(){vis.on=false},resumeStreaming(){vis.on=true},setProcessorEnabled(p,b){p.enabled=b},getProcessorEnabled(p){return p.enabled},getCameraState(){return'STREAMING'}}};return o}});
+
+/* ---------- 3D view (three.js) + 2D fallback ---------- */
+let view3=true,cam=0,T3=null,DT=.016,err3='';const VWS={z:1,px:0,py:0,yaw:0,pit:0,orbit:false,t:0,d:100},V2={z:1,x:0,y:0};
+function init3(){try{
+if(typeof THREE==='undefined')throw Error('three.js did not load (offline or blocked)');
+const rd=new THREE.WebGLRenderer({antialias:true});rd.setPixelRatio(Math.min(devicePixelRatio||1,2));rd.setSize(640,480,false);
+$('v3').appendChild(rd.domElement);rd.domElement.className='gl';
+const ov=document.createElement('canvas');ov.width=320;ov.height=240;ov.style.cssText='position:absolute;right:8px;bottom:8px;width:200px;height:150px;pointer-events:none;border:2px solid #22c55e;border-radius:6px;display:block;box-sizing:border-box';
+$('v3').appendChild(ov);const oc=ov.getContext('2d');const cc=new THREE.PerspectiveCamera(42.2,4/3,.5,500);
+const sn=new THREE.Scene(),dk=matchMedia('(prefers-color-scheme: dark)').matches;
+sn.background=new THREE.Color(dk?0x10151c:0xbfd4ea);
+sn.add(new THREE.AmbientLight(0xffffff,.7));const dl=new THREE.DirectionalLight(0xffffff,.8);dl.position.set(-50,120,70);sn.add(dl);
+const cm=new THREE.PerspectiveCamera(50,1,1,1500);cm.position.set(0,40,190);
+const CL=new THREE.Vector3();let CLi=0;let VW=0,VH=0;const fit=()=>{const e=$('vis'),w=Math.max(120,e.clientWidth||0),h=Math.max(120,e.clientHeight||0);if(w!==VW||h!==VH){VW=w;VH=h;rd.setSize(w,h,false);cm.aspect=w/h;cm.updateProjectionMatrix()}};
+const M=(c,o)=>new THREE.MeshStandardMaterial(Object.assign({color:c,roughness:.7},o)),
+bx=(w,h,d,c,x,y,z,p,o)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),M(c,o));m.position.set(x,y,z);(p||sn).add(m);return m},
+cy=(rt,rbt,h,sg,c,x,y,z,p)=>{const g=new THREE.CylinderGeometry(rt,rbt,h,sg);g.rotateZ(Math.PI/2);const m=new THREE.Mesh(g,M(c));m.position.set(x,y,z);p.add(m);return m};
+const my=M(0xf5c400),mr=M(0xef4444),mb=M(0x3b82f6),MT=[my,mr,mb],bg=new THREE.SphereGeometry(1,12,10),bm=[];
+const tc=document.createElement('canvas');tc.width=tc.height=384;const g=tc.getContext('2d');
+for(let a=0;a<6;a++)for(let b=0;b<6;b++){g.fillStyle=(a+b)%2?'#7d8895':'#8c97a4';g.fillRect(a*64,b*64,64,64)}
+const fl=new THREE.Mesh(new THREE.PlaneGeometry(144,144),new THREE.MeshStandardMaterial({map:new THREE.CanvasTexture(tc)}));fl.rotation.x=-Math.PI/2;sn.add(fl);
+const pl=(w,d,c,x,z,o)=>{const p=new THREE.Mesh(new THREE.PlaneGeometry(w,d),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:o}));p.rotation.x=-Math.PI/2;p.position.set(x-72,.08,z-72);sn.add(p)};
+pl(23,2,0xdc2626,11.5,1,.95);pl(23,2,0x2563eb,132.5,143,.95);pl(11,23,0xdc2626,5.5,108,.45);pl(11,23,0x2563eb,138.5,36,.45);
+const wo={transparent:true,opacity:.4};
+bx(146,12,1,0xd8dde3,0,6,-72.5,0,wo);bx(146,12,1,0xd8dde3,0,6,72.5,0,wo);bx(1,12,146,0xd8dde3,-72.5,6,0,0,wo);bx(1,12,146,0xd8dde3,72.5,6,0,0,wo);
+[-24.73,24.73].forEach(x=>{[-1,1].forEach(sg=>{const b=bx(1.4,48.1,1.4,0x9aa4b0,x,22,sg*9.75);b.rotation.x=-sg*.418});bx(1.4,1.4,39,0x9aa4b0,x,.7,0)});
+cy(.9,.9,49.46,12,0x6b7280,0,43.95,0,sn);
+const ts=new THREE.Shape();ts.moveTo(-19.5,0);ts.lineTo(19.5,0);ts.lineTo(0,43.95);ts.closePath();
+[-24.73,24.73].forEach(x=>{const m=new THREE.Mesh(new THREE.ShapeGeometry(ts),M(0xf59e0b,{transparent:true,opacity:.3,side:THREE.DoubleSide}));m.rotation.y=Math.PI/2;m.position.x=x;sn.add(m)});
+const ttc={};
+const tagTex=id=>{if(ttc[id])return ttc[id];const tcv=document.createElement('canvas');tcv.width=tcv.height=160;const tg=tcv.getContext('2d');tg.fillStyle='#fff';tg.fillRect(0,0,160,160);
+for(let r=0;r<8;r++){const by=parseInt(TAGS[id].substr(r*2,2),16);for(let q=0;q<8;q++){tg.fillStyle=(by>>(7-q))&1?'#fff':'#000';tg.fillRect((q+1)*16,(r+1)*16,16,16)}}
+const tx=new THREE.CanvasTexture(tcv);tx.minFilter=THREE.LinearFilter;tx.magFilter=THREE.NearestFilter;tx.generateMipmaps=false;return ttc[id]=tx};
+const rk=[0xdc2626,0x2563eb].map((col,i)=>{const gp=new THREE.Group();gp.position.set(HX[i]-72,43.95,0);sn.add(gp);
+bx(1.2,1.2,31,0x374151,0,0,0,gp);
+[-1,1].forEach(sg=>{const c=new THREE.Group();c.position.z=sg*15.4;c.position.y=5.2;gp.add(c);const w={transparent:true,opacity:.6};
+bx(20,14,.5,col,0,0,-sg*6,c,w);bx(20,.5,12,col,0,-7,0,c,w);bx(20,.5,12,col,0,7,0,c,w);bx(.5,14,12,col,-10,0,0,c,w);bx(.5,14,12,col,10,0,0,c,w);
+const id0=TGC.find(t=>t[0]==i&&t[1]==sg)[2];
+for(let k=0;k<4;k++){const tm=new THREE.Mesh(new THREE.PlaneGeometry(4.0625,4.0625),new THREE.MeshBasicMaterial({map:tagTex(id0+k)}));tm.rotation.order='YXZ';tm.rotation.set(Math.PI/2,sg==1?0:Math.PI,0);tm.position.set(sg*(k-1.5)*4.6,-7.03,0);c.add(tm)}});
+return gp});
+const fgm=M(0x16a34a,{transparent:true,opacity:.3,side:THREE.DoubleSide}),
+fs=FLP.map(([x,y])=>{const gp=new THREE.Group();gp.position.set(x-72,0,y-72);
+const wx=x-72,wz=y-72;gp.rotation.y=Math.atan2(-wx,-wz);sn.add(gp);
+const ring=(r,h)=>{const t=new THREE.Mesh(new THREE.TorusGeometry(r,.3,6,20),M(0x15803d));t.rotation.x=Math.PI/2;t.position.y=h;gp.add(t)};
+ring(1.9,.2);ring(2.2,MID);ring(2.2,21.5);
+[[2.1,0],[-2.1,0],[0,2.1],[0,-2.1]].forEach(([px,pz])=>{const p=new THREE.Mesh(new THREE.CylinderGeometry(.22,.22,21.5-MID,6),fgm);p.position.set(px,(21.5+MID)/2,pz);gp.add(p)});
+bx(.9,MID-.3,.9,0xaeb6c2,0,MID/2+.1,-2.3,gp);
+bx(4.2,1.25,.35,0x111827,0,22.1,-2.4,gp);
+return Array.from({length:7},()=>{const m=new THREE.Mesh(bg,my);m.visible=false;gp.add(m);return m})});
+/* REV DUO FTC Starter Bot (2026-27). Base dimensions from REV's build guide (mm -> in): 4 x 408 mm C-channel rails (45 x 15 mm), 248 mm cross channels,
+   90 mm traction (front) / grip (middle) / omni (rear) wheels, 6 flap wheels on a 308 mm shaft whose lower edge is 88 mm off the floor, chain-driven 1:1 by the Core Hex.
+   Superstructure, chute, flywheel (2 x 90 mm grip wheels) and poker follow the team photo. Front (intake) = -z */
+const rb=new THREE.Group();sn.add(rb);
+const al=0xaeb6c2,blk=0x16181d,gry=0x6b7280,wht=0xf3f4f6,og=0xea580c;
+const chc=document.createElement('canvas');chc.width=512;chc.height=96;{const g2=chc.getContext('2d');g2.fillStyle='#b9c0cb';g2.fillRect(0,0,512,96);g2.fillStyle='#4b5563';for(let r=0;r<2;r++)for(let k=0;k<11;k++){g2.beginPath();g2.ellipse(24+k*46,26+r*44,15,9,0,0,7);g2.fill()}}
+const mT=M(0xffffff,{map:new THREE.CanvasTexture(chc)}),mA=M(al);
+[-5.18,5.18].forEach(x=>{const m=new THREE.Mesh(new THREE.BoxGeometry(.59,1.77,16.06),[mT,mT,mA,mA,mA,mA]);m.position.set(x,1.77,0);rb.add(m)});
+bx(9.76,1.77,.59,al,0,1.77,-3.1,rb);bx(9.76,1.77,.59,al,0,1.77,1.9,rb);
+bx(4,1.2,2.3,0x2b3038,0,1.5,-.6,rb);
+bx(3.5,1,2.3,0x1c2330,0,2.9,4.2,rb);bx(3.1,.15,.5,0x22c55e,0,3.45,4.2,rb);
+const wl=[],wr=[];
+const wheel=(x,z,kind)=>{const g=new THREE.Group();g.position.set(x,1.77,z);rb.add(g);(x<0?wl:wr).push(g);
+if(kind=='omni'){cy(1.2,1.2,.9,20,wht,0,0,0,g);for(let k=0;k<10;k++){const a=k*Math.PI/5,rl=new THREE.Mesh(new THREE.CylinderGeometry(.4,.4,1,8),M(blk));rl.position.set(0,1.37*Math.cos(a),1.37*Math.sin(a));rl.rotation.x=a+Math.PI/2;g.add(rl)}}
+else{const w=kind=='grip'?1.3:.86;cy(1.77,1.77,w,32,blk,0,0,0,g);cy(1.25,1.25,w+.05,24,wht,0,0,0,g)}};
+[-1,1].forEach(sg=>{wheel(sg*6.2,-5.7,'tire');wheel(sg*6.35,.1,'grip');wheel(sg*6.2,5.9,'omni')});
+const ex=(w,h,d,x,y,z,r)=>{const m=bx(w,h,d,al,x,y,z,rb);if(r)m.rotation.x=r;return m};
+[-5,5].forEach(x=>{ex(.6,7,.6,x,6.4,-2.4);ex(.6,7,.6,x,6.4,5.2);ex(.6,.6,8.2,x,9.8,1.4);ex(.6,.6,10,x,6,.6);ex(.6,7.02,.6,x,6.05,-6.35,.457);
+[[-2.4,9.8],[5.2,9.8],[-2.4,3.1],[5.2,3.1]].forEach(([z,y])=>bx(.15,1.3,1.3,blk,x+(x>0?.38:-.38),y,z,rb))});
+bx(9.8,.6,.6,al,0,9.8,5.2,rb);bx(9.8,.6,.6,al,0,9.8,-2.4,rb);bx(9.8,.6,.6,al,0,2.9,-7.9,rb);bx(9.8,.6,.6,al,0,9.2,-4.8,rb);
+/* intake: Core Hex on the powered shaft, 20T sprockets + chain (1:1), six medium flap wheels */
+const flapGeo=new THREE.BoxGeometry(.7,2.2,.3);flapGeo.translate(0,1.1,0);const flapM=M(0x4b5563);
+const ik=new THREE.Group();ik.position.set(0,3.56,-7.4);rb.add(ik);cy(.1,.1,12.1,8,0xc0c6d0,0,0,0,ik);
+for(let k=0;k<6;k++){const f=new THREE.Group();f.position.x=(k-2.5)*1.55;ik.add(f);cy(.7,.7,.8,12,gry,0,0,0,f);for(let q=0;q<6;q++){const a=new THREE.Mesh(flapGeo,flapM);a.rotation.x=q*Math.PI/3;f.add(a)}}
+cy(.8,.8,.35,20,gry,-5.9,0,0,ik);
+const dsh=new THREE.Group();dsh.position.set(0,6.5,-4.3);rb.add(dsh);cy(.1,.1,12.1,8,0xc0c6d0,0,0,0,dsh);cy(.8,.8,.35,20,gry,-5.9,0,0,dsh);
+bx(3,1.7,1.7,blk,-4.2,0,0,dsh);bx(2.2,1.72,.4,og,-4.2,0,0,dsh);
+const chn=bx(.12,.12,4.25,gry,-5.9,5,-5.85,rb);chn.rotation.x=-.76;
+/* polycarbonate: 248 x 112 mm intake sheet, then the chute up to the flywheel */
+const pc1=bx(9.76,.08,4.41,0xdfe9f2,0,3.75,-4.75,rb,{transparent:true,opacity:.8});pc1.rotation.x=-.72;
+const pc2=bx(9.4,.08,5.9,wht,0,6.8,-1.15,rb,{transparent:true,opacity:.85});pc2.rotation.x=-.65;
+[-4.7,4.7].forEach(sx=>{const g=bx(.08,2.2,5.9,wht,sx,7.7,-1.15,rb,{transparent:true,opacity:.7});g.rotation.x=-.65});
+/* flywheel: two 90 mm grip wheels + 90T gears on an HD Hex motor / UltraPlanetary */
+const fwm=new THREE.Group();fwm.position.set(0,10.6,2.4);rb.add(fwm);
+[-.75,.75].forEach(x=>{cy(1.77,1.77,1.25,32,blk,x,0,0,fwm);cy(1.2,1.2,1.3,24,wht,x,0,0,fwm)});[-1.65,1.65].forEach(x=>cy(1.5,1.5,.35,36,0x2a2f38,x,0,0,fwm));
+cy(.1,.1,9,8,0xc0c6d0,0,10.6,2.4,rb);[-3.4,3.4].forEach(x=>bx(.35,3,3,al,x,10.1,2.4,rb));
+cy(1.1,1.1,1.9,16,0xaeb6c2,-3.6,10.6,2.4,rb);cy(1.05,1.05,2.4,16,blk,-5.2,10.6,2.4,rb);
+const hood=bx(9.4,.08,4.6,wht,0,14.4,3.8,rb,{transparent:true,opacity:.8});hood.rotation.x=-1.2217;
+/* feeder: Smart Robot Servo (CR mode) turning a roller at the flywheel entrance */
+const feedR=new THREE.Group();feedR.position.set(0,8.4,.6);rb.add(feedR);cy(.6,.6,5.6,12,gry,0,0,0,feedR);bx(1.9,1.2,1.6,blk,3.9,8.4,.6,rb);
+/* pollen poker: Smart Robot Servo on a bracket at the right side, aluminium horn + rod; the tip bends inward into a hook. servo 1 = UP, 0 = DOWN */
+bx(2.4,.6,.6,al,5.0,5.2,-3.5,rb);bx(1.9,1.3,1.6,blk,6.7,6,-3.5,rb);
+const armG=new THREE.Group();armG.position.set(PKR,PKP[1],-PKP[0]);rb.add(armG);
+const bgm=new THREE.BoxGeometry(.6,.6,1);bgm.translate(0,0,-.5);const boom=new THREE.Mesh(bgm,M(al));boom.scale.z=PKL;armG.add(boom);
+bx(.9,.9,.5,gry,0,0,-.2,armG);bx(PKR-PKX,.5,.5,al,-(PKR-PKX)/2,0,-PKL,armG);bx(.7,.7,.7,og,-(PKR-PKX),0,-PKL,armG);
+/* C920 (optional add-on) on an adjustable mast */
+const mast=bx(.8,1,.8,gry,0,8.5,7.4,rb);const cg=new THREE.Group();rb.add(cg);bx(3.7,1.2,1.1,0x111827,0,0,0,cg);bx(.8,.8,.3,0x93c5fd,0,0,.65,cg);
+const fovG=new THREE.BufferGeometry(),fovA=new Float32Array(18*3);fovG.setAttribute('position',new THREE.BufferAttribute(fovA,3));
+const fovL=new THREE.LineSegments(fovG,new THREE.LineBasicMaterial({color:0x22c55e,transparent:true,opacity:.8}));fovL.frustumCulled=false;fovL.visible=false;sn.add(fovL);
+/* carried elements ride up the chute */
+const cs=[0,1,2,3].map(k=>{const m=new THREE.Mesh(bg,my);const z=-3+k*1.3;m.position.set(0,5+(z+3.5)*.766+1.4,z);rb.add(m);return m});
+T3=()=>{fit();
+rb.position.set(R.x-72,0,R.y-72);rb.rotation.y=-R.h;{cg.position.set(CMT.lat,CMT.h,-CMT.fwd);cg.rotation.order='YXZ';cg.rotation.set(-CMT.pitch*Math.PI/180,-CMT.yaw*Math.PI/180,0);
+mast.position.set(CMT.lat,(CMT.h+3.4)/2,-CMT.fwd);mast.scale.y=Math.max(.5,CMT.h-3.4);
+const sv=!$('cp').hidden&&CMT.show;fovL.visible=sv;if(sv){fovPoints(camPose(),70).forEach((p,i)=>{fovA[i*3]=p[0]-72;fovA[i*3+1]=p[1];fovA[i*3+2]=p[2]-72});fovG.attributes.position.needsUpdate=true}}
+wl.forEach(w=>w.rotation.x-=R.vl*DT/1.77);wr.forEach(w=>w.rotation.x-=R.vr*DT/1.77);
+const ip=mot.intake?mot.intake.p*mot.intake.dir:0;ik.rotation.x-=ip*DT*14;dsh.rotation.x-=ip*DT*14;feedR.rotation.x-=(mot.feeder?mot.feeder.p:0)*DT*18;
+if(mot.flywheel)fwm.rotation.x+=mot.flywheel.vel*DT*.06;
+armG.rotation.x=pokeAng(arm.ap);
+cs.forEach((m,k)=>{m.visible=k<carry.length;if(m.visible){m.material=MT[carry[k]];m.scale.setScalar(carry[k]?1.8:1.4)}});
+balls.forEach((b,i)=>{let m=bm[i];if(!m){m=new THREE.Mesh(bg,my);sn.add(m);bm[i]=m}m.visible=true;m.material=MT[b.t];m.scale.setScalar(b.r);m.position.set(b.x-72,b.z,b.y-72)});
+for(let i=balls.length;i<bm.length;i++)bm[i].visible=false;
+fls.forEach((st,j)=>{let b=0;const th=Math.atan2(-(FLP[j][0]-72),-(FLP[j][1]-72)),cq=Math.cos(th),sq=Math.sin(th);fs[j].forEach((m,k)=>{m.visible=k<st.length;if(m.visible){const d=DIA[st[k]];m.material=MT[st[k]];m.scale.setScalar(d/2);m.position.y=b+d/2;m.position.x=k==0?fo[j].x*cq-fo[j].y*sq:0;m.position.z=k==0?fo[j].x*sq+fo[j].y*cq:0;b+=d}})});
+fgm.opacity=isOpen()?.6:.3;
+rk.forEach((gp,i)=>{gp.rotation.x=-hv[i].rot});
+const fx=Math.sin(R.h),fz=-Math.cos(R.h),px=R.x-72,pz=R.y-72;let tg,lk;
+if(cam==0){tg=new THREE.Vector3(px+fx*30,32,pz+fz*30);lk=new THREE.Vector3(px-fx*40,20,pz-fz*40)}
+else if(cam==1){tg=new THREE.Vector3(px-fx*34,24,pz-fz*34);lk=new THREE.Vector3(px+fx*20,3,pz+fz*20)}
+else if(cam==2){const ka=Math.max(1,VH/VW);tg=new THREE.Vector3(0,178*ka,1);lk=new THREE.Vector3(0,0,0)}
+else{const ka=Math.max(1,VH/VW);tg=new THREE.Vector3(0,105*ka,125*ka);lk=new THREE.Vector3(0,0,5)}
+const vc=viewCam([tg.x,tg.y,tg.z],[lk.x,lk.y,lk.z]),kf=performance.now()-VWS.t<250?.55:1-Math.exp(-DT*9);
+tg.set(vc.P[0],vc.P[1],vc.P[2]);lk.set(vc.L[0],vc.L[1],vc.L[2]);
+cm.position.lerp(tg,kf);if(!CLi){CL.copy(lk);CLi=1}else CL.lerp(lk,kf);cm.lookAt(CL);rd.render(sn,cm);
+const dets=detectTags();
+if(vis.on){const cal=CAL[vis.w+'x'+vis.h]||CAL['640x480'],cp=camPose(),w=Math.round(Math.min(VW*.34,260)),h=Math.round(w*vis.h/vis.w),mg=8;
+cc.fov=2*deg(Math.atan(vis.h/2/cal[1]));cc.aspect=vis.w/vis.h;cc.updateProjectionMatrix();
+cc.position.set(cp.P[0]-72,cp.P[1],cp.P[2]-72);cc.up.set(cp.Uc[0],cp.Uc[1],cp.Uc[2]);cc.lookAt(cp.P[0]-72+cp.F[0],cp.P[1]+cp.F[1],cp.P[2]-72+cp.F[2]);
+rd.setScissorTest(true);rd.setViewport(VW-w-mg,mg,w,h);rd.setScissor(VW-w-mg,mg,w,h);rd.render(sn,cc);rd.setScissorTest(false);rd.setViewport(0,0,VW,VH);
+const oh=Math.round(320*vis.h/vis.w);if(ov.height!=oh)ov.height=oh;ov.style.width=w+'px';ov.style.height=h+'px';
+oc.clearRect(0,0,320,oh);const k=320/vis.w;oc.lineWidth=2;oc.strokeStyle='#22c55e';oc.fillStyle='#22c55e';oc.font='bold 13px system-ui';
+dets.forEach(d=>{oc.beginPath();d.corners.forEach((c,j)=>j?oc.lineTo(c.x*k,c.y*k):oc.moveTo(c.x*k,c.y*k));oc.closePath();oc.stroke();oc.fillText('ID '+d.id,d.center.x*k-14,d.center.y*k+4)});
+oc.fillStyle='rgba(0,0,0,.6)';oc.fillRect(0,0,170,18);oc.fillStyle='#fff';oc.font='11px system-ui';oc.fillText('C920 '+vis.w+'x'+vis.h+' · '+dets.length+' tag'+(dets.length==1?'':'s'),4,13)}
+else{const w2=Math.round(Math.min(VW*.34,260));ov.style.width=w2+'px';ov.style.height=Math.round(w2*.75)+'px';ov.height=240;oc.fillStyle='#0b0f14';oc.fillRect(0,0,320,240);oc.fillStyle='#8b95a3';oc.font='14px system-ui';oc.fillText('Camera off · build a VisionPortal',14,28)}}
+}catch(e){T3=null;view3=false;err3=(e&&e.message)||String(e);console.error('3D init failed:',e)}}
+function draw(){const q=SC;X.fillStyle='#8c97a4';X.fillRect(0,0,600,600);
+X.fillStyle='#dc2626';X.fillRect(0,0,23*q,3*q);X.fillStyle='#2563eb';X.fillRect(121*q,141*q,23*q,3*q);
+X.fillStyle='rgba(220,38,38,.4)';X.fillRect(0,96.5*q,11*q,23*q);X.fillStyle='rgba(37,99,235,.4)';X.fillRect(133*q,24.5*q,11*q,23*q);
+X.fillStyle='#6b7280';X.fillRect(47.3*q,52.5*q,49.4*q,39*q);
+X.fillStyle='#16a34a';FLP.forEach(([x,y])=>{X.beginPath();X.arc(x*q,y*q,4*q,0,7);X.fill()});
+balls.forEach(b=>{X.fillStyle=['#f5c400','#ef4444','#3b82f6'][b.t];X.beginPath();X.arc(b.x*q,b.y*q,b.r*q*1.3,0,7);X.fill()});
+X.save();X.translate(R.x*q,R.y*q);X.rotate(R.h);X.fillStyle='#3b82f6';X.fillRect(-7*q,-8*q,14*q,16*q);X.fillStyle='#f97316';X.fillRect(-4.9*q,-11*q,9.8*q,3*q);X.restore();
+{const tk=pokerTip(),sn_=Math.sin(R.h),cs_=Math.cos(R.h),ppx=R.x+sn_*PKP[0]+cs_*PKR,ppy=R.y-cs_*PKP[0]+sn_*PKR;X.strokeStyle='#aeb6c2';X.lineWidth=3;X.beginPath();X.moveTo(ppx*q,ppy*q);X.lineTo(tk.x*q,tk.y*q);X.stroke();X.fillStyle=tk.h<3.9?'#ea580c':'#fbbf24';X.beginPath();X.arc(tk.x*q,tk.y*q,1.2*q,0,7);X.fill()}}
+function applyView(){const on=view3&&!!T3;cv.style.display=on?'none':'block';$('v3').style.display=on?'block':'none';$('vt').textContent=on?'🧊 3D':'🗺 2D';$('cb').style.display=on?'':'none';$('zm').style.display=on?'':'none'}
+$('vt').onclick=()=>{if(!T3)return;view3=!view3;viewReset();applyView()};
+$('cb').onclick=()=>{cam=(cam+1)%4;viewReset();$('cb').textContent=['🎯 Aim','🎥 Chase','🦅 Top','📐 Iso'][cam]};
+$('cb').textContent='🎯 Aim';
+init3();applyView();
+function status(){
+if(!run)return'';if(mode==1)return'Auto: controller input is ignored (the program drives).';
+const Fw=mot.flywheel,Fd=mot.feeder,I=mot.intake,m=[];
+const ip=I?I.p*I.dir:0;
+if(R.blk)m.push('Robot is pushing against a wall or obstacle (the intake starts against the wall: reverse or turn)');
+if(performance.now()-note.t<5000)m.push(note.m);
+if(ip>.3&&carry.length>=4)m.push('Hopper full (4/4)');
+if(ip<-.3&&!carry.length)m.push('Hopper empty');
+if(Fw&&Fw.tgt>300)m.push('Flywheel '+Math.round(Fw.vel)+'/'+Math.round(Fw.tgt));
+if(Fd&&Math.abs(Fd.p)>.3){if(!carry.length)m.push('nothing to feed');else if(!Fw||Fw.tgt<300)m.push('flywheel off');else if(Math.abs(Fw.vel-Fw.tgt)>=.15*Fw.tgt)m.push('waiting for flywheel speed')}
+if(arm.ap<.5)m.push('Poker DOWN: turn or drive so the hook sweeps across a flower\'s bottom opening; it pushes the pollen sideways toward the intake')
+return m.join(' · ')}
+/* ---------- camera-mount panel ---------- */
+function syncMount(){const q=(id,v)=>{$(id).value=v},d1=v=>Math.abs(v).toFixed(1);
+q('mf',CMT.fwd);q('ml',CMT.lat);q('mh',CMT.h);q('ct',CMT.pitch);q('my',CMT.yaw);
+$('mfv').textContent=d1(CMT.fwd)+' in '+(CMT.fwd<0?'behind':'ahead');$('mlv').textContent=CMT.lat==0?'centred':d1(CMT.lat)+' in '+(CMT.lat<0?'left':'right');
+$('mhv').textContent=CMT.h.toFixed(1)+' in';$('ctv').textContent=Math.abs(CMT.pitch)+'° '+(CMT.pitch>=0?'up':'down');$('myv').textContent=CMT.yaw==0?'straight back':Math.abs(CMT.yaw)+'° '+(CMT.yaw>0?'right':'left');
+const e=aimErr();$('mn').textContent='From the launch spot ('+e.r.toFixed(0)+' in from the tags) the red tag row is '+Math.abs(e.b).toFixed(1)+'° '+(e.b>0?'left':'right')+' and '+Math.abs(e.e).toFixed(1)+'° '+(e.e>0?'above':'below')+' the image centre. Facing back, the camera looks the way the launcher fires.'}
+function setMount(k){Object.assign(CMT,MOUNTS[k]);autoAim();$('mp').value=k;syncMount()}
+(function(){const sel=$('mp');sel.innerHTML=Object.keys(MOUNTS).map(k=>'<option>'+k+'</option>').join('')+'<option>Custom</option>';
+sel.onchange=()=>{if(MOUNTS[sel.value])setMount(sel.value)};
+[['mf','fwd'],['ml','lat'],['mh','h'],['ct','pitch'],['my','yaw']].forEach(([id,k])=>{$(id).oninput=()=>{CMT[k]=+$(id).value;sel.value='Custom';syncMount()}});
+$('ma').onclick=()=>{autoAim();syncMount()};$('ms').onchange=()=>{CMT.show=$('ms').checked};
+$('cmb').onclick=()=>{$('cp').hidden=!$('cp').hidden;syncMount()};$('mx').onclick=()=>{$('cp').hidden=true};
+setMount('Rear mast · centre')})();
+/* ---------- viewer: zoom / pan / orbit (3D camera and the 2D fallback) ---------- */
+function viewCam(tg,lk){
+const o=[tg[0]-lk[0],tg[1]-lk[1],tg[2]-lk[2]];let r=Math.hypot(o[0],o[1],o[2])||1,az=Math.atan2(o[0],o[2]),el=Math.asin(cl(o[1]/r,-1,1));
+az+=VWS.yaw;el=cl(el+VWS.pit,.08,1.57);r/=VWS.z;const ce=Math.cos(el),off=[r*ce*Math.sin(az),r*Math.sin(el),r*ce*Math.cos(az)];
+const f=[-off[0],-off[1],-off[2]],fl=Math.hypot(f[0],f[2]),rt=fl>1e-4?[-f[2]/fl,0,f[0]/fl]:[1,0,0];
+let u=[rt[1]*f[2]-rt[2]*f[1],rt[2]*f[0]-rt[0]*f[2],rt[0]*f[1]-rt[1]*f[0]];const ul=Math.hypot(u[0],u[1],u[2])||1;u=u.map(q=>q/ul);
+const L=[0,1,2].map(i=>lk[i]+rt[i]*VWS.px+u[i]*VWS.py);VWS.d=r;return{P:[L[0]+off[0],L[1]+off[1],L[2]+off[2]],L}}
+function apply2D(){cv.style.transform='translate('+V2.x.toFixed(1)+'px,'+V2.y.toFixed(1)+'px) scale('+V2.z.toFixed(3)+')'}
+function viewReset(){VWS.z=1;VWS.px=VWS.py=VWS.yaw=VWS.pit=0;V2.z=1;V2.x=V2.y=0;apply2D()}
+const touched=()=>{VWS.t=performance.now()};
+function zoomBy(f,cx,cy){if(view3&&T3)VWS.z=cl(VWS.z*f,.35,6);else{const z2=cl(V2.z*f,.5,8),k=z2/V2.z;V2.x=cx-(cx-V2.x)*k;V2.y=cy-(cy-V2.y)*k;V2.z=z2;apply2D()}touched()}
+function zoomC(f){const e=$('vis');zoomBy(f,e.clientWidth/2,e.clientHeight/2)}
+function panBy(dx,dy){if(view3&&T3){const w=.933*(VWS.d||100)/Math.max($('vis').clientHeight,1);VWS.px=cl(VWS.px-dx*w,-250,250);VWS.py=cl(VWS.py+dy*w,-250,250)}else{V2.x+=dx;V2.y+=dy;apply2D()}touched()}
+const orbitBy=(dx,dy)=>{VWS.yaw-=dx*.008;VWS.pit=cl(VWS.pit+dy*.006,-1.5,1.5);touched()};
+{const V=$('vis'),ptr=new Map(),skip=e=>e.target.closest&&e.target.closest('#ovl,#zc,#cp'),pd=()=>{const a=[...ptr.values()];return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)};let lp=0;
+V.addEventListener('pointerdown',e=>{if(skip(e))return;V.setPointerCapture(e.pointerId);ptr.set(e.pointerId,{x:e.clientX,y:e.clientY,b:e.button,sh:e.shiftKey});if(ptr.size==2)lp=pd();V.classList.add('drag');touched()});
+V.addEventListener('pointermove',e=>{const p=ptr.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;
+if(ptr.size==1){if((p.b===2||p.b===1||p.sh||VWS.orbit)&&view3&&T3)orbitBy(dx,dy);else panBy(dx,dy)}
+else if(ptr.size==2){const d=pd(),a=[...ptr.values()],r=V.getBoundingClientRect();if(lp>0)zoomBy(d/lp,(a[0].x+a[1].x)/2-r.left,(a[0].y+a[1].y)/2-r.top);lp=d;panBy(dx/2,dy/2)}});
+const up=e=>{ptr.delete(e.pointerId);lp=ptr.size==2?pd():0;if(!ptr.size)V.classList.remove('drag')};
+V.addEventListener('pointerup',up);V.addEventListener('pointercancel',up);V.addEventListener('lostpointercapture',up);
+V.addEventListener('wheel',e=>{if(skip(e))return;e.preventDefault();const r=V.getBoundingClientRect();zoomBy(Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)),e.clientX-r.left,e.clientY-r.top)},{passive:false});
+V.addEventListener('dblclick',e=>{if(!skip(e))viewReset()});V.addEventListener('contextmenu',e=>e.preventDefault())}
+$('zi').onclick=()=>zoomC(1.25);$('zo').onclick=()=>zoomC(.8);$('zr').onclick=viewReset;
+$('zm').onclick=()=>{VWS.orbit=!VWS.orbit;$('zm').textContent=VWS.orbit?'⟳':'✥';$('zm').classList.toggle('on',VWS.orbit)};
+/* ---------- Xbox-style on-screen controller (also shows keyboard / real gamepad input live) ---------- */
+const PADSVG=`<svg id="padsvg" viewBox="0 0 520 340" role="group" aria-label="Xbox style controller">
+<g class="pout"><rect x="80" y="66" width="360" height="170" rx="72"/><ellipse cx="118" cy="250" rx="58" ry="80" transform="rotate(14 118 250)"/><ellipse cx="402" cy="250" rx="58" ry="80" transform="rotate(-14 402 250)"/></g>
+<g class="pfil"><rect x="80" y="66" width="360" height="170" rx="72"/><ellipse cx="118" cy="250" rx="58" ry="80" transform="rotate(14 118 250)"/><ellipse cx="402" cy="250" rx="58" ry="80" transform="rotate(-14 402 250)"/></g>
+<g class="pbtn" id="b_lt" data-b="lt"><title>LT — not used by the REV Starter Bot</title><rect x="105" y="4" width="96" height="34" rx="12"/><text x="153" y="27">LT</text></g>
+<g class="pbtn" id="b_rt" data-b="rt"><title>RT — outtake pollen (intakeMotor −1)</title><rect x="319" y="4" width="96" height="34" rx="12"/><text x="367" y="27">RT</text></g>
+<g class="pbtn" id="b_lb" data-b="lb"><title>LB — flywheel sequence: spin to targetVelocity, crServo feeds when in range</title><rect x="88" y="42" width="128" height="22" rx="10"/><text x="152" y="58">LB</text></g>
+<g class="pbtn" id="b_rb" data-b="rb"><title>RB — intake pollen (intakeMotor +1)</title><rect x="304" y="42" width="128" height="22" rx="10"/><text x="368" y="58">RB</text></g>
+<circle cx="260" cy="92" r="14" class="guide"/><path d="M254 86l12 12M266 86l-12 12" class="gx"/>
+<g class="pbtn" id="b_bk" data-b="bk"><title>Back — not used</title><rect x="211" y="116" width="26" height="14" rx="7"/></g>
+<g class="pbtn" id="b_st" data-b="st"><title>Start — not used</title><rect x="283" y="116" width="26" height="14" rx="7"/></g>
+<g><circle cx="140" cy="122" r="40" class="sbase"/><g id="k_l"><circle cx="140" cy="122" r="26" class="sknob"/><circle cx="140" cy="122" r="11" class="sdot"/></g><circle id="h_l" cx="140" cy="122" r="48" class="hit"><title>Left stick — arcade drive (leftDrive y+x, rightDrive y−x)</title></circle></g>
+<rect class="dc" x="194" y="178" width="22" height="24"/>
+<g class="pbtn" id="b_du" data-b="du"><title>D-pad up — crServo feeder +1</title><rect x="194" y="154" width="22" height="24" rx="4"/></g>
+<g class="pbtn" id="b_dd" data-b="dd"><title>D-pad down — crServo feeder −1</title><rect x="194" y="202" width="22" height="24" rx="4"/></g>
+<g class="pbtn" id="b_dl" data-b="dl"><title>D-pad left — not used</title><rect x="170" y="178" width="24" height="24" rx="4"/></g>
+<g class="pbtn" id="b_dr" data-b="dr"><title>D-pad right — not used</title><rect x="216" y="178" width="24" height="24" rx="4"/></g>
+<g><circle cx="325" cy="180" r="38" class="sbase"/><g id="k_r"><circle cx="325" cy="180" r="25" class="sknob"/><circle cx="325" cy="180" r="10" class="sdot"/></g><circle id="h_r" cx="325" cy="180" r="46" class="hit"><title>Right stick — not used by the REV code</title></circle></g>
+<g class="face" id="b_y" data-b="y"><title>Y / triangle — flywheel to targetVelocity only</title><circle cx="392" cy="94" r="16" fill="#eab308"/><text x="392" y="100">Y</text></g>
+<g class="face" id="b_a" data-b="a"><title>A / cross — pollenServo 0 (poker DOWN)</title><circle cx="392" cy="150" r="16" fill="#22c55e"/><text x="392" y="156">A</text></g>
+<g class="face" id="b_x" data-b="x"><title>X / square — flywheel reverse at −0.55</title><circle cx="364" cy="122" r="16" fill="#3b82f6"/><text x="364" y="128">X</text></g>
+<g class="face" id="b_b" data-b="b"><title>B / circle — pollenServo 1 (poker UP)</title><circle cx="420" cy="122" r="16" fill="#ef4444"/><text x="420" y="128">B</text></g>
+</svg><div class="leg">REV layout: left stick arcade drive · RB intake · RT outtake · LB flywheel sequence · Y flywheel · X flywheel reverse · D-pad ↑/↓ feeder · A poker down · B poker up</div><div class="leg" id="pks" style="font-weight:600"></div>`;
+const PADMAP={lt:o=>o.left_trigger>.2,rt:o=>o.right_trigger>.2,lb:o=>o.left_bumper,rb:o=>o.right_bumper,a:o=>o.a,b:o=>o.b,x:o=>o.x,y:o=>o.y,du:o=>o.dpad_up,dd:o=>o.dpad_down,dl:o=>o.dpad_left,dr:o=>o.dpad_right,st:o=>o.start,bk:o=>o.back};
+let PBK=[];
+function buildPad(){try{
+$('pad').innerHTML=PADSVG;const svg=$('padsvg');
+Object.keys(PADMAP).forEach(k=>{const el=$('b_'+k);el.onpointerdown=e=>{el.setPointerCapture(e.pointerId);vg[k]=1;e.preventDefault()};el.onpointerup=el.onpointercancel=()=>{vg[k]=0};el.oncontextmenu=e=>e.preventDefault()});
+PBK=Object.keys(PADMAP).map(k=>[$('b_'+k),PADMAP[k]]);
+const loc=e=>{const p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())};
+['l','r'].forEach(k=>{const h=$('h_'+k),cx=+h.getAttribute('cx'),cy=+h.getAttribute('cy');
+const mv=e=>{const p=loc(e);vg[k+'x']=clip((p.x-cx)/30);vg[k+'y']=clip((p.y-cy)/30)};
+h.onpointerdown=e=>{h.setPointerCapture(e.pointerId);mv(e);e.preventDefault()};h.onpointermove=e=>{if(h.hasPointerCapture(e.pointerId))mv(e)};
+h.onpointerup=h.onpointercancel=()=>{vg[k+'x']=0;vg[k+'y']=0};h.oncontextmenu=e=>e.preventDefault()})}catch(e){}}
+function updatePad(o){PBK.forEach(([el,f])=>el.classList.toggle('on',!!f(o)));
+const kn=(id,x,y)=>{const e=$(id);if(e)e.setAttribute('transform','translate('+(x*16).toFixed(1)+' '+(y*16).toFixed(1)+')')};
+kn('k_l',o.left_stick_x,o.left_stick_y);kn('k_r',o.right_stick_x,o.right_stick_y)}
+buildPad();
+/* header height drives where the code pop-over starts; panels and help buttons */
+const setHH=()=>{const b=$('top').getBoundingClientRect().bottom;document.documentElement.style.setProperty('--hh',((b||48)+16)+'px')};
+onresize=setHH;setHH();
+$('cd').onclick=()=>{setHH();$('codeSec').classList.toggle('open')};$('cx').onclick=()=>$('codeSec').classList.remove('open');
+$('hp').onclick=()=>{$('help').hidden=false};$('hx').onclick=()=>{$('help').hidden=true};$('help').onclick=e=>{if(e.target===$('help'))$('help').hidden=true};
+function frame(now){
+const dt=Math.min((now-last)/1000||.016,.05);last=now;
+const pv=readPad();updatePad(pv);
+if(run){try{
+simT+=dt;tleft=dur-simT;
+Object.assign(gp1,mode==1?blank():pv);padDerive(gp1);
+if(tleft<=0)finish();
+else if(prog.linear){if(lin){const r=lin.next();if(r.done){lin=null;linDone=true;stopMotors()}}}
+else if(prog.M.loop)prog.call(prog.M.loop,[],F)}catch(e){fail(e)}}
+DT=dt;physics(dt);if(view3&&T3){try{T3()}catch(e){T3=null;view3=false;err3='3D render error: '+((e&&e.message)||e);console.error(e);applyView()}}if(!(view3&&T3))draw();
+const sc=calc();if($('pks'))$('pks').textContent='Poker: '+(arm.ap>.97?'UP (pollenServo 1)':arm.ap<.03?'DOWN (pollenServo 0)':'moving…');$('zl').textContent=(view3&&T3?VWS.z:V2.z).toFixed(1)+'×';$('st').textContent=status();
+$('tel').textContent=tshow||('Press Run. Your Java executes live.'+(err3?'\n⚠ 3D unavailable: '+err3+' (showing 2D)':''));
+$('hud').textContent=(run?(Math.floor(tleft/60)+':'+String(Math.ceil(tleft)%60).padStart(2,'0'))+' · ':'')+'🔴 '+sc[0]+'  🔵 '+sc[1]+' · '+carry.length+'/4';
+requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script></body></html>
